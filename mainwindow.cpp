@@ -45,4 +45,20 @@ void MainWindow::on_pushButton_clicked()
     }
     else
         return;
+    if (!exists(InputDirectory))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((InputDirectory.string()+ " not exists ").c_str());
+        msgBox.exec();
+        InputDirectory = "d:\\";
+    }
+    if (!is_directory(InputDirectory))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((InputDirectory.string()+ " This is not a directory path ").c_str());
+        msgBox.exec();
+        InputDirectory = "d:\\";
+    }
+    ui->DirectoryLineEdit->setText(QString::fromWCharArray(InputDirectory.wstring().c_str()));
+    ui->FileListWidget->clear();
 }
