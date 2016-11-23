@@ -32,5 +32,5 @@ win32: LIBS += -lopencv_highgui2413d
 win32: LIBS += -lopencv_imgproc2413d
 
 win32: LIBS += -LC:\Boost\lib
-win32:  LIBS += -lboost_filesystem-vc120-mt-gd-1_60
-win32:  LIBS += -lboost_regex-vc120-mt-gd-1_60
+win32:  LIBS += -lboost_filesystem-vc120-mt-gd-1_62
+win32:  LIBS += -lboost_regex-vc120-mt-gd-1_62

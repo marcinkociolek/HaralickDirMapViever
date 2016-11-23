@@ -18,8 +18,8 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>30</y>
-      <width>256</width>
+      <y>50</y>
+      <width>371</width>
       <height>401</height>
      </rect>
     </property>
@@ -44,6 +44,29 @@
       <y>0</y>
       <width>501</width>
       <height>21</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="RegexLineEdit">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>30</y>
+      <width>81</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>.+txt</string>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="textEdit">
+    <property name="geometry">
+     <rect>
+      <x>390</x>
+      <y>30</y>
+      <width>231</width>
+      <height>421</height>
      </rect>
     </property>
    </widget>
