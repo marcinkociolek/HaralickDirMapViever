@@ -26,6 +26,22 @@ public:
     path CurrentDir;
     path InputDirectory;
 
+    Mat ImIn;
+    Mat ImShow;
+
+    int maxX;
+    int maxY;
+
+    int tileShape;
+    int maxTileX;
+    int maxTileY;
+    int shiftTileX;
+    int shiftTileY;
+    int offsetTileX;
+    int offsetTileY;
+
+    int tileLineThickness;
+
 private slots:
     void on_pushButton_clicked();
 
