@@ -17,8 +17,9 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
-#include "gradient.h"
+//#include "gradient.h"
 #include "DispLib.h"
+#include "StringFcLib.h"
 
 using namespace boost;
 using namespace std;
@@ -216,6 +217,34 @@ void MainWindow::on_FileListWidget_currentTextChanged(const QString &currentText
 
 //end of read params
     ui->textEdit->clear();
+// read size of data vector
+    while (inFile1.good())
+    {
+        getline(inFile1, Line1);
+
+        regex LinePattern("Tile Y.+");
+        if (regex_match(Line1.c_str(), LinePattern))
+        {
+            break;
+        }
+    }
+    int ValueCount = 1;
+    size_t stringPos = 1;
+    while(stringPos)
+    {
+        stringPos = Line1.find("\t",stringPos);
+        ValueCount++;
+    }
+    ui->textEdit->append(ItoStrLZ(ValueCount,2).c_str());
+    ui->textEdit->append("\n");
+
+
+//read directionalities
+
+
+
+
+
     ui->textEdit->append(ImFileName.string().c_str());
     ImIn = imread(ImFileName.string().c_str(),CV_LOAD_IMAGE_ANYDEPTH);
     maxX = ImIn.cols;
