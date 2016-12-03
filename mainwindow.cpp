@@ -228,19 +228,33 @@ void MainWindow::on_FileListWidget_currentTextChanged(const QString &currentText
             break;
         }
     }
-    int ValueCount = 1;
-    size_t stringPos = 1;
-    while(stringPos)
+    int ValueCount = 0;
+    size_t stringPos = 0;
+    while(1)
     {
         stringPos = Line1.find("\t",stringPos);
         ValueCount++;
+        if(stringPos != string::npos)
+            break;
+        stringPos++;
     }
+    ui->textEdit->append("\n");
     ui->textEdit->append(ItoStrLZ(ValueCount,2).c_str());
     ui->textEdit->append("\n");
 
 
-//read directionalities
 
+//read directionalities
+    while (inFile1.good())
+    {
+        getline(inFile1, Line1);
+
+        regex LinePattern("Tile Y.+");
+        if (regex_match(Line1.c_str(), LinePattern))
+        {
+            break;
+        }
+    }
 
 
 
@@ -252,7 +266,7 @@ void MainWindow::on_FileListWidget_currentTextChanged(const QString &currentText
 
     ImShow = ShowImage16PseudoColor(ImIn,0.0,64000.0);
 
-    tileLineThickness = 2;
+    tileLineThickness = 1;
 
     switch (tileShape)
     {
