@@ -42,6 +42,11 @@ public:
 
     int tileLineThickness;
 
+    int *TilesX;
+    int *TilesY;
+    float
+
+
 private slots:
     void on_pushButton_clicked();
 

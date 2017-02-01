@@ -242,20 +242,14 @@ void MainWindow::on_FileListWidget_currentTextChanged(const QString &currentText
     ui->textEdit->append(ItoStrLZ(ValueCount,2).c_str());
     ui->textEdit->append("\n");
 
-
+    list<string> TilesParams;
 
 //read directionalities
     while (inFile1.good())
     {
-        getline(inFile1, Line1);
-
-        regex LinePattern("Tile Y.+");
-        if (regex_match(Line1.c_str(), LinePattern))
-        {
-            break;
-        }
+        getline(inFile1, Line1,'\t');
+        TilesParams.push_back(stoi(Line1);
     }
-
 
 
 
@@ -318,6 +312,22 @@ void MainWindow::on_FileListWidget_currentTextChanged(const QString &currentText
     default:
         break;
     }
+    /*
+    for(list<int>::iterator iterTileY =TilesX.begin(); iterTileY != TileY.end(); iterTileY++)
+        double lineLength;
+        if (ProcOptions.lineLengthPropToConfidence)
+            lineLength = (double)(ProcOptions.lineHalfLength) / (ProcOptions.maxOfset - ProcOptions.minOfset + 1) / featCount * maxAngleCombVot;
+        else
+            lineLength = (double)(ProcOptions.lineHalfLength);
+        int lineOffsetX = (int)round(lineLength *  sin((double)(bestAngleCombVot)*ProcOptions.angleStep* PI / 180.0));
+        int lineOffsetY = (int)round(lineLength * cos((double)(bestAngleCombVot)*ProcOptions.angleStep* PI / 180.0));
+
+        if (maxAngleCombVot >= ProcOptions.minHit)
+        {
+            //line(ImToShow, Point(barCenterX - lineOffsetX, barCenterY - lineOffsetY), Point(barCenterX + lineOffsetX, barCenterY + lineOffsetY), Scalar(0, 0.0, 0.0, 0.0), ProcOptions.imposedLineThickness);
+            line(ImToShow, Point(x - lineOffsetX, y - lineOffsetY), Point(x + lineOffsetX, y + lineOffsetY), Scalar(0, 0.0, 0.0, 0.0), ProcOptions.imposedLineThickness);
+        }
+    */
     imshow("Input image",ImShow);
 
 }

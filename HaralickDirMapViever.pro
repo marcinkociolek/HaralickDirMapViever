@@ -15,11 +15,13 @@ TEMPLATE = app
 SOURCES += main.cpp\
         mainwindow.cpp\
         ../../ProjectsLib/LibMarcin/DispLib.cpp \
-    ../../ProjectsLib/LibMarcin/StringFcLib.cpp
+    ../../ProjectsLib/LibMarcin/StringFcLib.cpp \
+    ../../ProjectsLib/LibMarcin/tileparams.cpp
 
 HEADERS  += mainwindow.h\
          ../../ProjectsLib/LibMarcin/DispLib.h \
-    ../../ProjectsLib/LibMarcin/StringFcLib.h
+    ../../ProjectsLib/LibMarcin/StringFcLib.h \
+    ../../ProjectsLib/LibMarcin/tileparams.h
 
 FORMS    += mainwindow.ui
 
