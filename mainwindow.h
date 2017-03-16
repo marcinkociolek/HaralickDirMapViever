@@ -44,7 +44,7 @@ public:
 
     int *TilesX;
     int *TilesY;
-    float
+    //float
 
 
 private slots:

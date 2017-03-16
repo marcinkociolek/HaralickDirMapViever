@@ -20,6 +20,9 @@
 //#include "gradient.h"
 #include "DispLib.h"
 #include "StringFcLib.h"
+#include "tileparams.h"
+
+#define PI 3.14159265
 
 using namespace boost;
 using namespace std;
@@ -242,13 +245,16 @@ void MainWindow::on_FileListWidget_currentTextChanged(const QString &currentText
     ui->textEdit->append(ItoStrLZ(ValueCount,2).c_str());
     ui->textEdit->append("\n");
 
-    list<string> TilesParams;
-
+    //list<int> TilesParams;
+    vector<TileParams> ParamsVect;
 //read directionalities
-    while (inFile1.good())
+    while(inFile1.good())
     {
-        getline(inFile1, Line1,'\t');
-        TilesParams.push_back(stoi(Line1);
+        TileParams params;
+        getline(inFile1,Line1);
+        params.FromString(Line1);
+        if(params.tileX > -1 && params.tileY > -1)
+            ParamsVect.push_back(params);//TilesParams.push_back(stoi(Line1));
     }
 
 
@@ -312,6 +318,33 @@ void MainWindow::on_FileListWidget_currentTextChanged(const QString &currentText
     default:
         break;
     }
+
+    int numOfDirections = ParamsVect.size();
+
+    for(int i = 0; i < numOfDirections; i++)
+    {
+        int x  = ParamsVect[i].tileX * shiftTileX + offsetTileX;
+        int y  = ParamsVect[i].tileY * shiftTileY + offsetTileY;
+        double angle = ParamsVect[i].Params[ui->spinBoxFeatureToShow->value()];
+        double lineLength = ui->spinBoxLineLength->value();
+        int imposedLineThickness = ui->spinBoxImposedLineThickness->value();
+/*
+        if (ProcOptions.lineLengthPropToConfidence)
+            lineLength = (double)(ProcOptions.lineHalfLength) / (ProcOptions.maxOfset - ProcOptions.minOfset + 1) / featCount * maxAngleCombVot;
+        else
+            lineLength = (double)(ProcOptions.lineHalfLength);
+*/
+        int lineOffsetX = (int)round(lineLength * sin(angle * PI / 180.0));
+        int lineOffsetY = (int)round(lineLength * cos(angle * PI / 180.0));
+
+        if (angle >= -600)
+        {
+            //line(ImToShow, Point(barCenterX - lineOffsetX, barCenterY - lineOffsetY), Point(barCenterX + lineOffsetX, barCenterY + lineOffsetY), Scalar(0, 0.0, 0.0, 0.0), ProcOptions.imposedLineThickness);
+            line(ImShow, Point(x - lineOffsetX, y - lineOffsetY), Point(x + lineOffsetX, y + lineOffsetY), Scalar(0, 0.0, 0.0, 0.0), imposedLineThickness);
+        }
+    }
+
+
     /*
     for(list<int>::iterator iterTileY =TilesX.begin(); iterTileY != TileY.end(); iterTileY++)
         double lineLength;
