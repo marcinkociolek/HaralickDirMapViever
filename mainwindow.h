@@ -25,6 +25,8 @@ public:
     path FileToOpen;
     path CurrentDir;
     path InputDirectory;
+    path OutputDirectory;
+    path ImFileName;
 
     Mat ImIn;
     Mat ImShow;
@@ -46,11 +48,30 @@ public:
     int *TilesY;
     //float
 
+    void ProcessImage();
 
 private slots:
     void on_pushButton_clicked();
 
     void on_FileListWidget_currentTextChanged(const QString &currentText);
+
+    void on_checkBoxShowSape_toggled(bool checked);
+
+    void on_checkBoxShowLine_toggled(bool checked);
+
+    void on_checkBoxShowSudoColor_toggled(bool checked);
+
+    void on_spinBoxImposedShapeThickness_valueChanged(int arg1);
+
+    void on_spinBoxImposedLineThickness_valueChanged(int arg1);
+
+    void on_spinBoxLineLength_valueChanged(int arg1);
+
+    void on_spinBoxFeatureToShow_valueChanged(int arg1);
+
+    void on_pushButtonChoseOutDir_clicked();
+
+    void on_pushButtonSaveOut_pressed();
 
 private:
     Ui::MainWindow *ui;

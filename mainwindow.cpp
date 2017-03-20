@@ -39,57 +39,9 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::on_pushButton_clicked()
+void MainWindow::ProcessImage()
 {
-    QFileDialog dialog(this, "Open Folder");
-    dialog.setFileMode(QFileDialog::Directory);
-    dialog.setDirectory("E:/Ziarno/14.04.2016 Rozne klasy/Dobre");
 
-    //QStringList FileList= dialog.e
-    if(dialog.exec())
-    {
-        InputDirectory = dialog.directory().path().toStdWString();
-    }
-    else
-        return;
-    if (!exists(InputDirectory))
-    {
-        QMessageBox msgBox;
-        msgBox.setText((InputDirectory.string()+ " not exists ").c_str());
-        msgBox.exec();
-        InputDirectory = "d:\\";
-    }
-    if (!is_directory(InputDirectory))
-    {
-        QMessageBox msgBox;
-        msgBox.setText((InputDirectory.string()+ " This is not a directory path ").c_str());
-        msgBox.exec();
-        InputDirectory = "C:\\Data\\";
-    }
-    ui->DirectoryLineEdit->setText(QString::fromWCharArray(InputDirectory.wstring().c_str()));
-    ui->FileListWidget->clear();
-    for (directory_entry& FileToProcess : directory_iterator(InputDirectory))
-    {
-        regex FilePattern(ui->RegexLineEdit->text().toStdString());
-        if (!regex_match(FileToProcess.path().filename().string().c_str(), FilePattern ))
-            continue;
-
-        path PathLocal = FileToProcess.path();
-        if (!exists(PathLocal))
-        {
-            QMessageBox msgBox;
-            msgBox.setText((PathLocal.filename().string() + " File not exists" ).c_str());
-            msgBox.exec();
-            break;
-        }
-        ui->FileListWidget->addItem(PathLocal.filename().string().c_str());
-    }
-}
-
-void MainWindow::on_FileListWidget_currentTextChanged(const QString &currentText)
-{
-    FileToOpen = InputDirectory;
-    FileToOpen.append(currentText.toStdWString());
     if (!exists(FileToOpen))
         return;
 
@@ -98,6 +50,7 @@ void MainWindow::on_FileListWidget_currentTextChanged(const QString &currentText
     {
         QMessageBox msgBox;
         msgBox.setText((FileToOpen.filename().string() + " File not exists" ).c_str());
+        msgBox.exec();
         return;
     }
 // read params frm file
@@ -115,7 +68,10 @@ void MainWindow::on_FileListWidget_currentTextChanged(const QString &currentText
             break;
         }
     }
-    path ImFileName(Line2);
+
+    ImFileName = Line2;
+    //path ImFileName(Line2);
+
     // read tile shape
     while (inFile1.good())
     {
@@ -257,68 +213,81 @@ void MainWindow::on_FileListWidget_currentTextChanged(const QString &currentText
             ParamsVect.push_back(params);//TilesParams.push_back(stoi(Line1));
     }
 
-
+    inFile1.close();
 
     ui->textEdit->append(ImFileName.string().c_str());
     ImIn = imread(ImFileName.string().c_str(),CV_LOAD_IMAGE_ANYDEPTH);
     maxX = ImIn.cols;
     maxY = ImIn.rows;
 
-    ImShow = ShowImage16PseudoColor(ImIn,0.0,64000.0);
-
-    tileLineThickness = 1;
-
-    switch (tileShape)
+    if(!maxX || ! maxY)
     {
-    case 1:
-        for (int y = offsetTileY; y <= (maxY - offsetTileY); y += shiftTileY)
-        {
-            for (int x = offsetTileX; x <= (maxX - offsetTileX); x += shiftTileX)
-            {
-                rectangle(ImShow, Point(x - maxTileX / 2, y - maxTileY / 2),
-                    Point(x - maxTileX / 2 + maxTileX - 1, y - maxTileY / 2 + maxTileY - 1),
-                    Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
-            }
-        }
-        break;
-    case 2:
-        for (int y = offsetTileY; y <= (maxY - offsetTileY); y += shiftTileY)
-        {
-            for (int x = offsetTileX; x <= (maxX - offsetTileX); x += shiftTileX)
-            {
-                ellipse(ImShow, Point(x, y),
-                    Size(maxTileX / 2, maxTileY / 2), 0.0, 0.0, 360.0,
-                    Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
-            }
-        }
-        break;
-    case 3:
-        for (int y = offsetTileY; y <= (maxY - offsetTileY); y += shiftTileY)
-        {
-            for (int x = offsetTileX; x <= (maxX - offsetTileX); x += shiftTileX)
-            {
-                int edgeLength = maxTileX;
-                Point vertice0(x - edgeLength / 2, y - (int)((float)edgeLength * 0.8660254));
-                Point vertice1(x + edgeLength - edgeLength / 2, y - (int)((float)edgeLength * 0.8660254));
-                Point vertice2(x + edgeLength, y);
-                Point vertice3(x + edgeLength - edgeLength / 2, y + (int)((float)edgeLength * 0.8660254));
-                Point vertice4(x - edgeLength / 2, y + (int)((float)edgeLength * 0.8660254));
-                Point vertice5(x - edgeLength, y);
-
-                line(ImShow, vertice0, vertice1, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
-                line(ImShow, vertice1, vertice2, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
-                line(ImShow, vertice2, vertice3, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
-                line(ImShow, vertice3, vertice4, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
-                line(ImShow, vertice4, vertice5, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
-                line(ImShow, vertice5, vertice0, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
-
-            }
-        }
-        break;
-    default:
-        break;
+        QMessageBox msgBox;
+        ui->textEdit->append("\n Image File not exists");
+        return;
     }
 
+    if(ui->checkBoxShowSudoColor->checkState())
+        ImShow = ShowImage16PseudoColor(ImIn,0.0,64000.0);
+    else
+        ImShow = ImIn;
+
+    tileLineThickness = ui->spinBoxImposedShapeThickness->value();
+
+    if(ui->checkBoxShowSape->checkState())
+    {
+        switch (tileShape)
+        {
+        case 1:
+            for (int y = offsetTileY; y <= (maxY - offsetTileY); y += shiftTileY)
+            {
+                for (int x = offsetTileX; x <= (maxX - offsetTileX); x += shiftTileX)
+                {
+                    rectangle(ImShow, Point(x - maxTileX / 2, y - maxTileY / 2),
+                        Point(x - maxTileX / 2 + maxTileX - 1, y - maxTileY / 2 + maxTileY - 1),
+                        Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
+                }
+            }
+            break;
+        case 2:
+            for (int y = offsetTileY; y <= (maxY - offsetTileY); y += shiftTileY)
+            {
+                for (int x = offsetTileX; x <= (maxX - offsetTileX); x += shiftTileX)
+                {
+                    ellipse(ImShow, Point(x, y),
+                        Size(maxTileX / 2, maxTileY / 2), 0.0, 0.0, 360.0,
+                        Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
+                }
+            }
+            break;
+        case 3:
+            for (int y = offsetTileY; y <= (maxY - offsetTileY); y += shiftTileY)
+            {
+                for (int x = offsetTileX; x <= (maxX - offsetTileX); x += shiftTileX)
+                {
+                    int edgeLength = maxTileX;
+                    Point vertice0(x - edgeLength / 2, y - (int)((float)edgeLength * 0.8660254));
+                    Point vertice1(x + edgeLength - edgeLength / 2, y - (int)((float)edgeLength * 0.8660254));
+                    Point vertice2(x + edgeLength, y);
+                    Point vertice3(x + edgeLength - edgeLength / 2, y + (int)((float)edgeLength * 0.8660254));
+                    Point vertice4(x - edgeLength / 2, y + (int)((float)edgeLength * 0.8660254));
+                    Point vertice5(x - edgeLength, y);
+
+                    line(ImShow, vertice0, vertice1, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
+                    line(ImShow, vertice1, vertice2, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
+                    line(ImShow, vertice2, vertice3, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
+                    line(ImShow, vertice3, vertice4, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
+                    line(ImShow, vertice4, vertice5, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
+                    line(ImShow, vertice5, vertice0, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
+
+                }
+            }
+            break;
+        default:
+            break;
+        }
+
+    }
     int numOfDirections = ParamsVect.size();
 
     for(int i = 0; i < numOfDirections; i++)
@@ -337,7 +306,7 @@ void MainWindow::on_FileListWidget_currentTextChanged(const QString &currentText
         int lineOffsetX = (int)round(lineLength * sin(angle * PI / 180.0));
         int lineOffsetY = (int)round(lineLength * cos(angle * PI / 180.0));
 
-        if (angle >= -600)
+        if (angle >= -600 && ui->checkBoxShowLine->checkState())
         {
             //line(ImToShow, Point(barCenterX - lineOffsetX, barCenterY - lineOffsetY), Point(barCenterX + lineOffsetX, barCenterY + lineOffsetY), Scalar(0, 0.0, 0.0, 0.0), ProcOptions.imposedLineThickness);
             line(ImShow, Point(x - lineOffsetX, y - lineOffsetY), Point(x + lineOffsetX, y + lineOffsetY), Scalar(0, 0.0, 0.0, 0.0), imposedLineThickness);
@@ -362,5 +331,137 @@ void MainWindow::on_FileListWidget_currentTextChanged(const QString &currentText
         }
     */
     imshow("Input image",ImShow);
+}
 
+void MainWindow::on_pushButton_clicked()
+{
+    QFileDialog dialog(this, "Open Folder");
+    dialog.setFileMode(QFileDialog::Directory);
+    dialog.setDirectory("E:/Ziarno/14.04.2016 Rozne klasy/Dobre");
+
+    //QStringList FileList= dialog.e
+    if(dialog.exec())
+    {
+        InputDirectory = dialog.directory().path().toStdWString();
+    }
+    else
+        return;
+    if (!exists(InputDirectory))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((InputDirectory.string()+ " not exists ").c_str());
+        msgBox.exec();
+        InputDirectory = "d:\\";
+    }
+    if (!is_directory(InputDirectory))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((InputDirectory.string()+ " This is not a directory path ").c_str());
+        msgBox.exec();
+        InputDirectory = "C:\\Data\\";
+    }
+    ui->DirectoryLineEdit->setText(QString::fromWCharArray(InputDirectory.wstring().c_str()));
+    ui->FileListWidget->clear();
+    for (directory_entry& FileToProcess : directory_iterator(InputDirectory))
+    {
+        regex FilePattern(ui->RegexLineEdit->text().toStdString());
+        if (!regex_match(FileToProcess.path().filename().string().c_str(), FilePattern ))
+            continue;
+
+        path PathLocal = FileToProcess.path();
+        if (!exists(PathLocal))
+        {
+            QMessageBox msgBox;
+            msgBox.setText((PathLocal.filename().string() + " File not exists" ).c_str());
+            msgBox.exec();
+            break;
+        }
+        ui->FileListWidget->addItem(PathLocal.filename().string().c_str());
+    }
+}
+
+void MainWindow::on_FileListWidget_currentTextChanged(const QString &currentText)
+{
+    FileToOpen = InputDirectory;
+    FileToOpen.append(currentText.toStdWString());
+    ProcessImage();
+
+}
+
+void MainWindow::on_checkBoxShowSape_toggled(bool checked)
+{
+    ProcessImage();
+}
+
+void MainWindow::on_checkBoxShowLine_toggled(bool checked)
+{
+    ProcessImage();
+}
+
+void MainWindow::on_checkBoxShowSudoColor_toggled(bool checked)
+{
+    ProcessImage();
+}
+
+void MainWindow::on_spinBoxImposedShapeThickness_valueChanged(int arg1)
+{
+    ProcessImage();
+}
+
+void MainWindow::on_spinBoxImposedLineThickness_valueChanged(int arg1)
+{
+    ProcessImage();
+}
+
+void MainWindow::on_spinBoxLineLength_valueChanged(int arg1)
+{
+    ProcessImage();
+}
+
+void MainWindow::on_spinBoxFeatureToShow_valueChanged(int arg1)
+{
+    ProcessImage();
+}
+
+void MainWindow::on_pushButtonChoseOutDir_clicked()
+{
+    QFileDialog dialog(this, "Open Folder");
+    dialog.setFileMode(QFileDialog::Directory);
+    dialog.setDirectory("C:/Data");
+
+    //QStringList FileList= dialog.e
+    if(dialog.exec())
+    {
+        OutputDirectory = dialog.directory().path().toStdWString();
+    }
+    else
+        return;
+    if (!exists(OutputDirectory))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((OutputDirectory.string()+ " not exists ").c_str());
+        msgBox.exec();
+        InputDirectory = "C:\\";
+    }
+    if (!is_directory(OutputDirectory))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((OutputDirectory.string()+ " This is not a directory path ").c_str());
+        msgBox.exec();
+        OutputDirectory = "C:\\Data\\";
+    }
+    ui->LineEditSaveDirectory->setText(QString::fromWCharArray(OutputDirectory.wstring().c_str()));
+}
+
+void MainWindow::on_pushButtonSaveOut_pressed()
+{
+    if (!exists(FileToOpen))
+        return;
+    if(!maxX || ! maxY)
+    {
+        return;
+    }
+    path OutFileName = OutputDirectory;
+    OutFileName.append(ImFileName.stem().string() + ".bmp");
+    imwrite(OutFileName.string(),ImShow);
 }
