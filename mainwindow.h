@@ -7,8 +7,10 @@
 
 #include <QMainWindow>
 
-using namespace boost::filesystem;
-using namespace cv;
+#include "tileparams.h"
+
+//using namespace boost::filesystem;
+//using namespace cv;
 
 namespace Ui {
 class MainWindow;
@@ -22,14 +24,15 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
-    path FileToOpen;
-    path CurrentDir;
-    path InputDirectory;
-    path OutputDirectory;
-    path ImFileName;
+    boost::filesystem::path FileToOpen;
+    boost::filesystem::path CurrentDir;
+    boost::filesystem::path InputDirectory;
+    boost::filesystem::path ImFileName;
 
-    Mat ImIn;
-    Mat ImShow;
+    boost::filesystem::path OutputDirectory;
+
+    cv::Mat ImIn;
+    cv::Mat ImShow;
 
     int maxX;
     int maxY;
@@ -46,7 +49,40 @@ public:
 
     int *TilesX;
     int *TilesY;
+
+    std::vector<std::string> NamesVector;
+
+
+    boost::filesystem::path FileToOpen2;
+    boost::filesystem::path CurrentDir2;
+    boost::filesystem::path InputDirectory2;
+    boost::filesystem::path ImFileName2;
+
+    boost::filesystem::path OutputDirectory2;
+
+    cv::Mat ImIn2;
+    cv::Mat ImShow2;
+
+    int maxX2;
+    int maxY2;
+
+    int tileShape2;
+    int maxTileX2;
+    int maxTileY2;
+    int shiftTileX2;
+    int shiftTileY2;
+    int offsetTileX2;
+    int offsetTileY2;
+
+
+    int *TilesX2;
+    int *TilesY2;
+
+    std::vector<std::string> NamesVector2;
+
+
     //float
+    FileParams GetDirectionData(boost::filesystem::path FileToOpen);
 
     void ProcessImage();
 
@@ -72,6 +108,12 @@ private slots:
     void on_pushButtonChoseOutDir_clicked();
 
     void on_pushButtonSaveOut_pressed();
+
+    void on_doubleSpinBoxImMin_valueChanged(double arg1);
+
+    void on_doubleSpinBoxImMax_valueChanged(double arg1);
+
+    void on_doubleSpinBoxProcTresh_valueChanged(double arg1);
 
 private:
     Ui::MainWindow *ui;
