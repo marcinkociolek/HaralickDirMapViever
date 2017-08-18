@@ -29,62 +29,89 @@ public:
     boost::filesystem::path InputDirectory;
     boost::filesystem::path ImFileName;
 
+    //    boost::filesystem::path FileToOpen2;
+    //    boost::filesystem::path CurrentDir2;
+    boost::filesystem::path InputDirectory2;
+    //    boost::filesystem::path ImFileName2;
+
     boost::filesystem::path OutputDirectory;
 
     cv::Mat ImIn;
     cv::Mat ImShow;
 
-    int maxX;
-    int maxY;
+    FileParams FilePar1;
 
-    int tileShape;
-    int maxTileX;
-    int maxTileY;
-    int shiftTileX;
-    int shiftTileY;
-    int offsetTileX;
-    int offsetTileY;
-
+    bool sudocolor;
+    bool showShape;
+    bool showLine;
+    float minIm;
+    float maxIm;
     int tileLineThickness;
-
-    int *TilesX;
-    int *TilesY;
-
-    std::vector<std::string> NamesVector;
-
-
-    boost::filesystem::path FileToOpen2;
-    boost::filesystem::path CurrentDir2;
-    boost::filesystem::path InputDirectory2;
-    boost::filesystem::path ImFileName2;
-
-    boost::filesystem::path OutputDirectory2;
-
-    cv::Mat ImIn2;
-    cv::Mat ImShow2;
-
-    int maxX2;
-    int maxY2;
-
-    int tileShape2;
-    int maxTileX2;
-    int maxTileY2;
-    int shiftTileX2;
-    int shiftTileY2;
-    int offsetTileX2;
-    int offsetTileY2;
+    int featNr;
+    float meanIntensityTreshold;
+    double lineLength;
+    int imposedLineThickness;
 
 
-    int *TilesX2;
-    int *TilesY2;
+    //    int maxX;
+//    int maxY;
 
-    std::vector<std::string> NamesVector2;
+//    int tileShape;
+//    int maxTileX;
+//    int maxTileY;
+//    int shiftTileX;
+//    int shiftTileY;
+//    int offsetTileX;
+//    int offsetTileY;
+
+//    int tileLineThickness;
+
+//    int *TilesX;
+//    int *TilesY;
+
+//    std::vector<std::string> NamesVector;
+
+
+
+
+//    boost::filesystem::path OutputDirectory2;
+
+//    cv::Mat ImIn2;
+//    cv::Mat ImShow2;
+
+//    int maxX2;
+//    int maxY2;
+
+//    int tileShape2;
+//    int maxTileX2;
+//    int maxTileY2;
+//    int shiftTileX2;
+//    int shiftTileY2;
+//    int offsetTileX2;
+//    int offsetTileY2;
+
+
+//    int *TilesX2;
+ //   int *TilesY2;
+
+//    std::vector<std::string> NamesVector2;
 
 
     //float
-    FileParams GetDirectionData(boost::filesystem::path FileToOpen);
+    FileParams MainWindow::GetDirectionData(boost::filesystem::path FileToOpen);
 
     void ProcessImage();
+    void MainWindow::ShowImage(cv::Mat Im, FileParams Params,
+                               bool sudocolor,
+                               bool showShape,
+                               bool showLine,
+                               float minIm,
+                               float maxIm,
+                               int tileLineThickness,
+                               int featNr,
+                               float meanIntensityTreshold,
+                               double lineLength,
+                               int imposedLineThickness);
 
 private slots:
     void on_pushButton_clicked();
@@ -114,6 +141,8 @@ private slots:
     void on_doubleSpinBoxImMax_valueChanged(double arg1);
 
     void on_doubleSpinBoxProcTresh_valueChanged(double arg1);
+
+    void on_pushButton2_clicked();
 
 private:
     Ui::MainWindow *ui;

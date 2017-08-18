@@ -34,6 +34,16 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    sudocolor = ui->checkBoxShowSudoColor->checkState();
+    showShape = ui->checkBoxShowSape->checkState();
+    showLine = ui->checkBoxShowLine->checkState();
+    minIm = ui->doubleSpinBoxImMin->value();
+    maxIm = ui->doubleSpinBoxImMax->value();
+    tileLineThickness = ui->spinBoxImposedShapeThickness->value();
+    featNr = ui->spinBoxFeatureToShow->value();
+    meanIntensityTreshold = ui->doubleSpinBoxProcTresh->value();
+    lineLength = ui->spinBoxLineLength->value();
+    imposedLineThickness = ui->spinBoxImposedLineThickness->value();
 }
 
 MainWindow::~MainWindow()
@@ -41,7 +51,7 @@ MainWindow::~MainWindow()
     delete ui;
 }
 //----------------------------------------------------------------------------------------------------------------
-FileParams GetDirectionData(path FileToOpen)
+FileParams MainWindow::GetDirectionData(path FileToOpen)
 {
     FileParams LocalParams;
     //check if file exists
@@ -224,12 +234,114 @@ FileParams GetDirectionData(path FileToOpen)
     inFile1.close();
     return LocalParams;
 }
+//----------------------------------------------------------------------------------------------------------------
+void MainWindow::ShowImage(cv::Mat Im, FileParams Params,
+                           bool sudocolor,
+                           bool showShape,
+                           bool showLine,
+                           float minIm,
+                           float maxIm,
+                           int tileLineThickness,
+                           int featNr,
+                           float meanIntensityTreshold,
+                           double lineLength,
+                           int imposedLineThickness)
+
+
+{
+    int maxX = Im.cols;
+    int maxY = Im.rows;
+
+    if(!maxX || ! maxY)
+    {
+        QMessageBox msgBox;
+        ui->textEdit->append("\n Image File not exists");
+        return;
+    }
+    Mat ImShow;
+
+    if(sudocolor)
+        ImShow = ShowImage16PseudoColor(Im,minIm,maxIm);
+    else
+        ImShow = Im;
+
+    if(showShape)
+    {
+        switch (Params.tileShape)
+        {
+        case 1:
+            for (int y = Params.offsetTileY; y <= (maxY - Params.offsetTileY); y += Params.shiftTileY)
+            {
+                for (int x = Params.offsetTileX; x <= (maxX - Params.offsetTileX); x += Params.shiftTileX)
+                {
+                    rectangle(ImShow, Point(x - Params.maxTileX / 2, y - Params.maxTileY / 2),
+                        Point(x - Params.maxTileX / 2 + Params.maxTileX - 1, y - Params.maxTileY / 2 + Params.maxTileY - 1),
+                        Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
+                }
+            }
+            break;
+        case 2:
+            for (int y = Params.offsetTileY; y <= (maxY - Params.offsetTileY); y += Params.shiftTileY)
+            {
+                for (int x = Params.offsetTileX; x <= (maxX - Params.offsetTileX); x += Params.shiftTileX)
+                {
+                    ellipse(ImShow, Point(x, y),
+                        Size(Params.maxTileX / 2, Params.maxTileY / 2), 0.0, 0.0, 360.0,
+                        Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
+                }
+            }
+            break;
+        case 3:
+            for (int y = Params.offsetTileY; y <= (maxY - Params.offsetTileY); y += Params.shiftTileY)
+            {
+                for (int x = Params.offsetTileX; x <= (maxX - Params.offsetTileX); x += Params.shiftTileX)
+                {
+                    int edgeLength = Params.maxTileX;
+                    Point vertice0(x - edgeLength / 2, y - (int)((float)edgeLength * 0.8660254));
+                    Point vertice1(x + edgeLength - edgeLength / 2, y - (int)((float)edgeLength * 0.8660254));
+                    Point vertice2(x + edgeLength, y);
+                    Point vertice3(x + edgeLength - edgeLength / 2, y + (int)((float)edgeLength * 0.8660254));
+                    Point vertice4(x - edgeLength / 2, y + (int)((float)edgeLength * 0.8660254));
+                    Point vertice5(x - edgeLength, y);
+
+                    line(ImShow, vertice0, vertice1, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
+                    line(ImShow, vertice1, vertice2, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
+                    line(ImShow, vertice2, vertice3, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
+                    line(ImShow, vertice3, vertice4, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
+                    line(ImShow, vertice4, vertice5, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
+                    line(ImShow, vertice5, vertice0, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
+
+                }
+            }
+            break;
+        default:
+            break;
+        }
+
+    }
+    int numOfDirections = (int)Params.ParamsVect.size();
+
+    for(int i = 0; i < numOfDirections; i++)
+    {
+        int x  = Params.ParamsVect[i].tileX * Params.shiftTileX + Params.offsetTileX;
+        int y  = Params.ParamsVect[i].tileY * Params.shiftTileY + Params.offsetTileY;
+        double angle = Params.ParamsVect[i].Params[featNr];
+
+        int lineOffsetX = (int)round(lineLength * sin(angle * PI / 180.0));
+        int lineOffsetY = (int)round(lineLength * cos(angle * PI / 180.0));
+
+        if (angle >= -600 && showLine && Params.ParamsVect[i].Params[9] >= meanIntensityTreshold )
+        {
+            line(ImShow, Point(x - lineOffsetX, y - lineOffsetY), Point(x + lineOffsetX, y + lineOffsetY), Scalar(0, 0.0, 0.0, 0.0), imposedLineThickness);
+        }
+    }
+    imshow("Input image 1",ImShow);
+}
 
 //----------------------------------------------------------------------------------------------------------------
 void MainWindow::ProcessImage()
 {
-
-
+/*
     if (!exists(FileToOpen))
         return;
 
@@ -500,13 +612,16 @@ void MainWindow::ProcessImage()
         double angle = ParamsVect[i].Params[ui->spinBoxFeatureToShow->value()];
         double lineLength = ui->spinBoxLineLength->value();
         int imposedLineThickness = ui->spinBoxImposedLineThickness->value();
+
 /*
         if (ProcOptions.lineLengthPropToConfidence)
             lineLength = (double)(ProcOptions.lineHalfLength) / (ProcOptions.maxOfset - ProcOptions.minOfset + 1) / featCount * maxAngleCombVot;
         else
             lineLength = (double)(ProcOptions.lineHalfLength);
 */
-        int lineOffsetX = (int)round(lineLength * sin(angle * PI / 180.0));
+
+/*
+    int lineOffsetX = (int)round(lineLength * sin(angle * PI / 180.0));
         int lineOffsetY = (int)round(lineLength * cos(angle * PI / 180.0));
 
         if (angle >= -600 && ui->checkBoxShowLine->checkState() && ParamsVect[i].Params[9] >= ui->doubleSpinBoxProcTresh->value() )
@@ -517,7 +632,7 @@ void MainWindow::ProcessImage()
     }
 
 
-    /*
+/*
     for(list<int>::iterator iterTileY =TilesX.begin(); iterTileY != TileY.end(); iterTileY++)
         double lineLength;
         if (ProcOptions.lineLengthPropToConfidence)
@@ -532,10 +647,12 @@ void MainWindow::ProcessImage()
             //line(ImToShow, Point(barCenterX - lineOffsetX, barCenterY - lineOffsetY), Point(barCenterX + lineOffsetX, barCenterY + lineOffsetY), Scalar(0, 0.0, 0.0, 0.0), ProcOptions.imposedLineThickness);
             line(ImToShow, Point(x - lineOffsetX, y - lineOffsetY), Point(x + lineOffsetX, y + lineOffsetY), Scalar(0, 0.0, 0.0, 0.0), ProcOptions.imposedLineThickness);
         }
-    */
+*/
+/*
     imshow("Input image",ImShow);
+*/
 }
-
+//------------------------------------------------------------------------------------------------------------------------------
 void MainWindow::on_pushButton_clicked()
 {
     QFileDialog dialog(this, "Open Folder");
@@ -587,43 +704,61 @@ void MainWindow::on_FileListWidget_currentTextChanged(const QString &currentText
 {
     FileToOpen = InputDirectory;
     FileToOpen.append(currentText.toStdWString());
-    ProcessImage();
+    FilePar1 = GetDirectionData(FileToOpen);
+    ImIn = imread(FilePar1.ImFileName.string().c_str(),CV_LOAD_IMAGE_ANYDEPTH);
+    ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
+              meanIntensityTreshold, lineLength, imposedLineThickness);
+    //ProcessImage();
 
 }
 
 void MainWindow::on_checkBoxShowSape_toggled(bool checked)
 {
-    ProcessImage();
+    showShape = checked;
+    ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
+              meanIntensityTreshold, lineLength, imposedLineThickness);
 }
 
 void MainWindow::on_checkBoxShowLine_toggled(bool checked)
 {
-    ProcessImage();
+    showLine = checked;
+    ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
+              meanIntensityTreshold, lineLength, imposedLineThickness);
 }
 
 void MainWindow::on_checkBoxShowSudoColor_toggled(bool checked)
 {
-    ProcessImage();
+    sudocolor = checked;
+    ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
+              meanIntensityTreshold, lineLength, imposedLineThickness);
 }
 
 void MainWindow::on_spinBoxImposedShapeThickness_valueChanged(int arg1)
 {
-    ProcessImage();
+    tileLineThickness = arg1;
+    ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
+              meanIntensityTreshold, lineLength, imposedLineThickness);
 }
 
 void MainWindow::on_spinBoxImposedLineThickness_valueChanged(int arg1)
 {
-    ProcessImage();
+    imposedLineThickness = arg1;
+    ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
+              meanIntensityTreshold, lineLength, imposedLineThickness);
 }
 
 void MainWindow::on_spinBoxLineLength_valueChanged(int arg1)
 {
-    ProcessImage();
+    lineLength = arg1;
+    ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
+              meanIntensityTreshold, lineLength, imposedLineThickness);
 }
 
 void MainWindow::on_spinBoxFeatureToShow_valueChanged(int arg1)
 {
-    ProcessImage();
+    featNr = arg1;
+    ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
+              meanIntensityTreshold, lineLength, imposedLineThickness);
 }
 
 void MainWindow::on_pushButtonChoseOutDir_clicked()
@@ -660,7 +795,8 @@ void MainWindow::on_pushButtonSaveOut_pressed()
 {
     if (!exists(FileToOpen))
         return;
-    if(!maxX || ! maxY)
+
+    if(!ImShow.cols || !ImShow.rows)
     {
         return;
     }
@@ -671,15 +807,68 @@ void MainWindow::on_pushButtonSaveOut_pressed()
 
 void MainWindow::on_doubleSpinBoxImMin_valueChanged(double arg1)
 {
-    ProcessImage();
+    minIm = arg1;
+    ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
+              meanIntensityTreshold, lineLength, imposedLineThickness);
 }
 
 void MainWindow::on_doubleSpinBoxImMax_valueChanged(double arg1)
 {
-   ProcessImage();
+    maxIm = arg1;
+    ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
+              meanIntensityTreshold, lineLength, imposedLineThickness);
 }
 
 void MainWindow::on_doubleSpinBoxProcTresh_valueChanged(double arg1)
 {
-   ProcessImage();
+    meanIntensityTreshold = arg1;
+    ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
+              meanIntensityTreshold, lineLength, imposedLineThickness);
+}
+
+void MainWindow::on_pushButton2_clicked()
+{
+    QFileDialog dialog(this, "Open Folder");
+    dialog.setFileMode(QFileDialog::Directory);
+    dialog.setDirectory("C:/Data/Sumona3Out/D28/20150819_28d_SC1_A2_Calc_PermOCN_ActinDAPI_1/");
+
+    //QStringList FileList= dialog.e
+    if(dialog.exec())
+    {
+        InputDirectory2 = dialog.directory().path().toStdWString();
+    }
+    else
+        return;
+    if (!exists(InputDirectory2))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((InputDirectory2.string()+ " not exists ").c_str());
+        msgBox.exec();
+        InputDirectory2 = "d:\\";
+    }
+    if (!is_directory(InputDirectory))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((InputDirectory2.string()+ " This is not a directory path ").c_str());
+        msgBox.exec();
+        InputDirectory2 = "C:\\Data\\";
+    }
+    ui->Directory2LineEdit->setText(QString::fromWCharArray(InputDirectory2.wstring().c_str()));
+    ui->File2ListWidget->clear();
+    for (directory_entry& FileToProcess : directory_iterator(InputDirectory2))
+    {
+        regex FilePattern(ui->RegexLineEdit->text().toStdString());
+        if (!regex_match(FileToProcess.path().filename().string().c_str(), FilePattern ))
+            continue;
+
+        path PathLocal = FileToProcess.path();
+        if (!exists(PathLocal))
+        {
+            QMessageBox msgBox;
+            msgBox.setText((PathLocal.filename().string() + " File not exists" ).c_str());
+            msgBox.exec();
+            break;
+        }
+        ui->File2ListWidget->addItem(PathLocal.filename().string().c_str());
+    }
 }
