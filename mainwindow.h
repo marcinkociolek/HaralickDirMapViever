@@ -110,7 +110,7 @@ public:
     //float
     FileParams MainWindow::GetDirectionData(boost::filesystem::path FileToOpen);
 
-    void ProcessImage();
+
     void MainWindow::ShowImage(cv::Mat Im, FileParams Params,
                                bool sudocolor,
                                bool showShape,

@@ -501,324 +501,6 @@ void MainWindow::Show2Image(cv::Mat Im, cv::Mat Im2, FileParams Params, FilePara
 
     imshow("Two images",ImOut);
 }
-//----------------------------------------------------------------------------------------------------------------
-//void MainWindow::CalcOut(FileParams Params, FileParams Params2, int featNr, double meanIntensityTreshold, double meanIntensityTreshold2)
-
-
-//----------------------------------------------------------------------------------------------------------------
-void MainWindow::ProcessImage()
-{
-/*
-    if (!exists(FileToOpen))
-        return;
-
-    std::ifstream inFile1(FileToOpen.string());
-    if (!inFile1.is_open())
-    {
-        QMessageBox msgBox;
-        msgBox.setText((FileToOpen.filename().string() + " File not exists" ).c_str());
-        msgBox.exec();
-        return;
-    }
-// read params frm file
-    string Line1,Line2;
-    bool inputDirFound = 0;
-    //read input directory
-    while (inFile1.good())
-    {
-        getline(inFile1, Line1,'\t');
-        getline(inFile1, Line2);
-        regex LinePattern("Input Directory 1:");
-        if (regex_match(Line1.c_str(), LinePattern))
-        {
-            inputDirFound = 1;
-            break;
-        }
-    }
-
-    ImFileName = Line2;
-    //path ImFileName(Line2);
-
-    // read tile shape
-    while (inFile1.good())
-    {
-        getline(inFile1, Line1);
-        regex LinePattern("Tile Shape:.+");
-        if (regex_match(Line1.c_str(), LinePattern))
-        {
-            break;
-        }
-    }
-
-    tileShape = stoi(Line1.substr(12,1));
-
-    //readTileSizeX
-    while (inFile1.good())
-    {
-        getline(inFile1, Line1);
-
-        regex LinePattern("Tile size x.+");
-        if (regex_match(Line1.c_str(), LinePattern))
-        {
-            break;
-        }
-    }
-    maxTileX = stoi(Line1.substr(13));
-    //readTileSizeY
-    while (inFile1.good())
-    {
-        getline(inFile1, Line1);
-
-        regex LinePattern("Tile size y.+");
-        if (regex_match(Line1.c_str(), LinePattern))
-        {
-            break;
-        }
-    }
-    maxTileY = stoi(Line1.substr(13));
-    //read shiftTileX
-    while (inFile1.good())
-    {
-        getline(inFile1, Line1);
-
-        regex LinePattern("Tile shift x:.+");
-        if (regex_match(Line1.c_str(), LinePattern))
-        {
-            break;
-        }
-    }
-    shiftTileX = stoi(Line1.substr(14));
-    //read shiftTileY
-    while (inFile1.good())
-    {
-        getline(inFile1, Line1);
-
-        regex LinePattern("Tile shift y:.+");
-        if (regex_match(Line1.c_str(), LinePattern))
-        {
-            break;
-        }
-    }
-    shiftTileY = stoi(Line1.substr(14));
-
-    //read offsetTileX
-    while (inFile1.good())
-    {
-        getline(inFile1, Line1);
-
-        regex LinePattern("Tile offset x:.+");
-        if (regex_match(Line1.c_str(), LinePattern))
-        {
-            break;
-        }
-    }
-    offsetTileX = stoi(Line1.substr(15));
-
-    //read offsetTileY
-    while (inFile1.good())
-    {
-        getline(inFile1, Line1);
-
-        regex LinePattern("Tile offset y:.+");
-        if (regex_match(Line1.c_str(), LinePattern))
-        {
-            break;
-        }
-    }
-    offsetTileY = stoi(Line1.substr(15));
-
-
-    // read input file name
-    while (inFile1.good())
-    {
-        getline(inFile1, Line1);
-
-        regex LinePattern("In file - .+");
-        if (regex_match(Line1.c_str(), LinePattern))
-        {
-            break;
-        }
-    }
-    ImFileName.append(Line1.substr(10));
-
-
-//end of read params
-    ui->textEdit->clear();
-// read size of data vector
-    while (inFile1.good())
-    {
-        getline(inFile1, Line1);
-
-        regex LinePattern("Tile Y.+");
-        if (regex_match(Line1.c_str(), LinePattern))
-        {
-            break;
-        }
-    }
-    int ValueCount = 0;
-    size_t stringPos = 0;
-    while(1)
-    {
-        stringPos = Line1.find("\t",stringPos);
-        ValueCount++;
-        if(stringPos != string::npos)
-            break;
-        stringPos++;
-    }
-    // read feature names
-    std::stringstream InStringStream(Line1);
-
-    std::string subStr;
-
-    NamesVector.empty();
-    char FeatName[256];
-    while(InStringStream.good())
-    {
-        InStringStream.getline(FeatName,250,'\t');
-        NamesVector.push_back(FeatName);
-    }
-    ui->labelFeatName->setText(NamesVector[ui->spinBoxFeatureToShow->value()+2].c_str());
-
-    ui->textEdit->append("\n");
-    ui->textEdit->append(ItoStrLZ(ValueCount,2).c_str());
-    ui->textEdit->append("\n");
-
-    //list<int> TilesParams;
-    vector<TileParams> ParamsVect;
-//read directionalities
-    while(inFile1.good())
-    {
-        TileParams params;
-        getline(inFile1,Line1);
-        params.FromString(Line1);
-        if(params.tileX > -1 && params.tileY > -1)
-            ParamsVect.push_back(params);//TilesParams.push_back(stoi(Line1));
-    }
-
-    inFile1.close();
-
-    ui->textEdit->append(ImFileName.string().c_str());
-    ImIn = imread(ImFileName.string().c_str(),CV_LOAD_IMAGE_ANYDEPTH);
-    maxX = ImIn.cols;
-    maxY = ImIn.rows;
-
-    if(!maxX || ! maxY)
-    {
-        QMessageBox msgBox;
-        ui->textEdit->append("\n Image File not exists");
-        return;
-    }
-
-    if(ui->checkBoxShowSudoColor->checkState())
-        ImShow = ShowImage16PseudoColor(ImIn,ui->doubleSpinBoxImMin->value(),ui->doubleSpinBoxImMax->value());
-    else
-        ImShow = ImIn;
-
-    tileLineThickness = ui->spinBoxImposedShapeThickness->value();
-
-    if(ui->checkBoxShowSape->checkState())
-    {
-        switch (tileShape)
-        {
-        case 1:
-            for (int y = offsetTileY; y <= (maxY - offsetTileY); y += shiftTileY)
-            {
-                for (int x = offsetTileX; x <= (maxX - offsetTileX); x += shiftTileX)
-                {
-                    rectangle(ImShow, Point(x - maxTileX / 2, y - maxTileY / 2),
-                        Point(x - maxTileX / 2 + maxTileX - 1, y - maxTileY / 2 + maxTileY - 1),
-                        Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
-                }
-            }
-            break;
-        case 2:
-            for (int y = offsetTileY; y <= (maxY - offsetTileY); y += shiftTileY)
-            {
-                for (int x = offsetTileX; x <= (maxX - offsetTileX); x += shiftTileX)
-                {
-                    ellipse(ImShow, Point(x, y),
-                        Size(maxTileX / 2, maxTileY / 2), 0.0, 0.0, 360.0,
-                        Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
-                }
-            }
-            break;
-        case 3:
-            for (int y = offsetTileY; y <= (maxY - offsetTileY); y += shiftTileY)
-            {
-                for (int x = offsetTileX; x <= (maxX - offsetTileX); x += shiftTileX)
-                {
-                    int edgeLength = maxTileX;
-                    Point vertice0(x - edgeLength / 2, y - (int)((float)edgeLength * 0.8660254));
-                    Point vertice1(x + edgeLength - edgeLength / 2, y - (int)((float)edgeLength * 0.8660254));
-                    Point vertice2(x + edgeLength, y);
-                    Point vertice3(x + edgeLength - edgeLength / 2, y + (int)((float)edgeLength * 0.8660254));
-                    Point vertice4(x - edgeLength / 2, y + (int)((float)edgeLength * 0.8660254));
-                    Point vertice5(x - edgeLength, y);
-
-                    line(ImShow, vertice0, vertice1, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
-                    line(ImShow, vertice1, vertice2, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
-                    line(ImShow, vertice2, vertice3, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
-                    line(ImShow, vertice3, vertice4, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
-                    line(ImShow, vertice4, vertice5, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
-                    line(ImShow, vertice5, vertice0, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
-
-                }
-            }
-            break;
-        default:
-            break;
-        }
-
-    }
-    int numOfDirections = ParamsVect.size();
-
-    for(int i = 0; i < numOfDirections; i++)
-    {
-        int x  = ParamsVect[i].tileX * shiftTileX + offsetTileX;
-        int y  = ParamsVect[i].tileY * shiftTileY + offsetTileY;
-        double angle = ParamsVect[i].Params[ui->spinBoxFeatureToShow->value()];
-        double lineLength = ui->spinBoxLineLength->value();
-        int imposedLineThickness = ui->spinBoxImposedLineThickness->value();
-
-/*
-        if (ProcOptions.lineLengthPropToConfidence)
-            lineLength = (double)(ProcOptions.lineHalfLength) / (ProcOptions.maxOfset - ProcOptions.minOfset + 1) / featCount * maxAngleCombVot;
-        else
-            lineLength = (double)(ProcOptions.lineHalfLength);
-*/
-
-/*
-    int lineOffsetX = (int)round(lineLength * sin(angle * PI / 180.0));
-        int lineOffsetY = (int)round(lineLength * cos(angle * PI / 180.0));
-
-        if (angle >= -600 && ui->checkBoxShowLine->checkState() && ParamsVect[i].Params[9] >= ui->doubleSpinBoxProcTresh->value() )
-        {
-            //line(ImToShow, Point(barCenterX - lineOffsetX, barCenterY - lineOffsetY), Point(barCenterX + lineOffsetX, barCenterY + lineOffsetY), Scalar(0, 0.0, 0.0, 0.0), ProcOptions.imposedLineThickness);
-            line(ImShow, Point(x - lineOffsetX, y - lineOffsetY), Point(x + lineOffsetX, y + lineOffsetY), Scalar(0, 0.0, 0.0, 0.0), imposedLineThickness);
-        }
-    }
-
-
-/*
-    for(list<int>::iterator iterTileY =TilesX.begin(); iterTileY != TileY.end(); iterTileY++)
-        double lineLength;
-        if (ProcOptions.lineLengthPropToConfidence)
-            lineLength = (double)(ProcOptions.lineHalfLength) / (ProcOptions.maxOfset - ProcOptions.minOfset + 1) / featCount * maxAngleCombVot;
-        else
-            lineLength = (double)(ProcOptions.lineHalfLength);
-        int lineOffsetX = (int)round(lineLength *  sin((double)(bestAngleCombVot)*ProcOptions.angleStep* PI / 180.0));
-        int lineOffsetY = (int)round(lineLength * cos((double)(bestAngleCombVot)*ProcOptions.angleStep* PI / 180.0));
-
-        if (maxAngleCombVot >= ProcOptions.minHit)
-        {
-            //line(ImToShow, Point(barCenterX - lineOffsetX, barCenterY - lineOffsetY), Point(barCenterX + lineOffsetX, barCenterY + lineOffsetY), Scalar(0, 0.0, 0.0, 0.0), ProcOptions.imposedLineThickness);
-            line(ImToShow, Point(x - lineOffsetX, y - lineOffsetY), Point(x + lineOffsetX, y + lineOffsetY), Scalar(0, 0.0, 0.0, 0.0), ProcOptions.imposedLineThickness);
-        }
-*/
-/*
-    imshow("Input image",ImShow);
-*/
-}
 //------------------------------------------------------------------------------------------------------------------------------
 void MainWindow::on_pushButton_clicked()
 {
@@ -865,6 +547,7 @@ void MainWindow::on_pushButton_clicked()
         }
         ui->FileListWidget->addItem(PathLocal.filename().string().c_str());
     }
+        zFrame = 0;
 }
 
 void MainWindow::on_FileListWidget_currentTextChanged(const QString &currentText)
@@ -880,6 +563,7 @@ void MainWindow::on_FileListWidget_currentTextChanged(const QString &currentText
         Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
                    tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness);
     //ProcessImage();
+
 
 }
 
@@ -1103,6 +787,7 @@ void MainWindow::on_pushButton2_clicked()
         }
         ui->File2ListWidget->addItem(PathLocal.filename().string().c_str());
     }
+        zFrame = 0;
 }
 
 void MainWindow::on_File2ListWidget_currentTextChanged(const QString &currentText)
@@ -1118,6 +803,7 @@ void MainWindow::on_File2ListWidget_currentTextChanged(const QString &currentTex
         Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
                    tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness);
     //ProcessImage();
+
 }
 
 void MainWindow::on_doubleSpinBoxImMin2_valueChanged(double arg1)
@@ -1240,7 +926,7 @@ void MainWindow::on_pushButtonMinus_clicked()
 
 void MainWindow::on_pushButtonCreateOut_clicked()
 {
-    for(int zOffset = -5;zOffset <=5; zOffset++)
+    for(int zOffset = -10;zOffset <=10; zOffset++)
     {
         string StrOut = "z Plane\ttile Y\ttile X\tdir Actin\tdir Calcein\tmean intensity Actin\tmean intensity Calcein\tAbs dir difference\n";
 
@@ -1277,14 +963,14 @@ void MainWindow::on_pushButtonCreateOut_clicked()
                 int x  = Params1.ParamsVect[i].tileX;
                 int y  = Params1.ParamsVect[i].tileY;
 
-                double angle1 = Params1.ParamsVect[i].Params[featNr];
-                double angle2 = Params2.ParamsVect[i].Params[featNr];
-                double meanInt1 = Params1.ParamsVect[i].Params[9];
-                double meanInt2 = Params2.ParamsVect[i].Params[9];
+                float angle1 = Params1.ParamsVect[i].Params[featNr];
+                float angle2 = Params2.ParamsVect[i].Params[featNr];
+                float meanInt1 = Params1.ParamsVect[i].Params[9];
+                float meanInt2 = Params2.ParamsVect[i].Params[9];
 
                 if (angle1 >= -600 && angle2 >= -600 && meanInt1 >= meanIntensityTreshold && meanInt2 >= meanIntensityTreshold2 )
                 {
-                    double diff;
+                    float diff;
                     if(angle1 > angle2)
                         diff = angle1 - angle2;
                     else
@@ -1306,12 +992,13 @@ void MainWindow::on_pushButtonCreateOut_clicked()
 
 
         }
-        ui->textEdit->append(StrOut.c_str());
+        //ui->textEdit->append(StrOut.c_str());
         path OutFileName = OutputDirectory;
         OutFileName.append("Summary ofset" + to_string(zOffset) + ".txt");
         std::ofstream out(OutFileName.string().c_str());
         out << StrOut;
         out.close();
+        StrOut.empty();
     }
 
 
