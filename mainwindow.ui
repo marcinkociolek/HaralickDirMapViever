@@ -95,6 +95,9 @@
     <property name="maximum">
      <number>8</number>
     </property>
+    <property name="value">
+     <number>8</number>
+    </property>
    </widget>
    <widget class="QSpinBox" name="spinBoxImposedLineThickness">
     <property name="geometry">
@@ -109,7 +112,7 @@
      <number>1</number>
     </property>
     <property name="maximum">
-     <number>5</number>
+     <number>10</number>
     </property>
     <property name="value">
      <number>2</number>
@@ -320,6 +323,9 @@
     <property name="singleStep">
      <double>512.000000000000000</double>
     </property>
+    <property name="value">
+     <double>-20000.000000000000000</double>
+    </property>
    </widget>
    <widget class="QDoubleSpinBox" name="doubleSpinBoxImMax">
     <property name="geometry">
@@ -343,7 +349,7 @@
      <double>512.000000000000000</double>
     </property>
     <property name="value">
-     <double>65535.000000000000000</double>
+     <double>40000.000000000000000</double>
     </property>
    </widget>
    <widget class="QDoubleSpinBox" name="doubleSpinBoxProcTresh">
@@ -366,6 +372,9 @@
     </property>
     <property name="singleStep">
      <double>128.000000000000000</double>
+    </property>
+    <property name="value">
+     <double>3000.000000000000000</double>
     </property>
    </widget>
    <widget class="QListWidget" name="File2ListWidget">
@@ -398,7 +407,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>Open In Folder</string>
+     <string>Open In Folder 2</string>
     </property>
    </widget>
    <widget class="QLabel" name="labelFeatName2">
@@ -436,7 +445,7 @@
      <double>512.000000000000000</double>
     </property>
     <property name="value">
-     <double>65535.000000000000000</double>
+     <double>40000.000000000000000</double>
     </property>
    </widget>
    <widget class="QDoubleSpinBox" name="doubleSpinBoxProcTresh2">
@@ -459,6 +468,9 @@
     </property>
     <property name="singleStep">
      <double>128.000000000000000</double>
+    </property>
+    <property name="value">
+     <double>3000.000000000000000</double>
     </property>
    </widget>
    <widget class="QDoubleSpinBox" name="doubleSpinBoxImMin2">
@@ -484,6 +496,115 @@
     </property>
     <property name="singleStep">
      <double>512.000000000000000</double>
+    </property>
+    <property name="value">
+     <double>-20000.000000000000000</double>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="checkBoxShowSecondIm">
+    <property name="geometry">
+     <rect>
+      <x>540</x>
+      <y>310</y>
+      <width>121</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Show Second Image</string>
+    </property>
+    <property name="checked">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="checkBoxShowFirstIm">
+    <property name="geometry">
+     <rect>
+      <x>540</x>
+      <y>290</y>
+      <width>121</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Show First Image</string>
+    </property>
+    <property name="checked">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="checkBoxShowTwoIm">
+    <property name="geometry">
+     <rect>
+      <x>540</x>
+      <y>270</y>
+      <width>121</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Show two Images</string>
+    </property>
+    <property name="checked">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="pushButtonPlus">
+    <property name="geometry">
+     <rect>
+      <x>710</x>
+      <y>260</y>
+      <width>80</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>+</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="pushButtonMinus">
+    <property name="geometry">
+     <rect>
+      <x>710</x>
+      <y>280</y>
+      <width>80</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>-</string>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="spinBoxZOffset">
+    <property name="geometry">
+     <rect>
+      <x>710</x>
+      <y>300</y>
+      <width>41</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="minimum">
+     <number>-5</number>
+    </property>
+    <property name="maximum">
+     <number>5</number>
+    </property>
+    <property name="value">
+     <number>0</number>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="pushButtonCreateOut">
+    <property name="geometry">
+     <rect>
+      <x>700</x>
+      <y>500</y>
+      <width>80</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Create Out</string>
     </property>
    </widget>
   </widget>

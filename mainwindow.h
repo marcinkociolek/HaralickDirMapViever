@@ -29,7 +29,7 @@ public:
     boost::filesystem::path InputDirectory;
     boost::filesystem::path ImFileName;
 
-    //    boost::filesystem::path FileToOpen2;
+    boost::filesystem::path FileToOpen2;
     //    boost::filesystem::path CurrentDir2;
     boost::filesystem::path InputDirectory2;
     //    boost::filesystem::path ImFileName2;
@@ -37,21 +37,31 @@ public:
     boost::filesystem::path OutputDirectory;
 
     cv::Mat ImIn;
+    cv::Mat ImIn2;
     cv::Mat ImShow;
 
     FileParams FilePar1;
+    FileParams FilePar2;
 
     bool sudocolor;
     bool showShape;
     bool showLine;
+    bool showFirstImage;
+    bool showSecondImage;
+    bool showTwoImages;
     float minIm;
     float maxIm;
+    float minIm2;
+    float maxIm2;
     int tileLineThickness;
     int featNr;
     float meanIntensityTreshold;
+    float meanIntensityTreshold2;
     double lineLength;
     int imposedLineThickness;
 
+    int zOffset;
+    int zFrame;
 
     //    int maxX;
 //    int maxY;
@@ -111,6 +121,18 @@ public:
                                int featNr,
                                float meanIntensityTreshold,
                                double lineLength,
+                               int imposedLineThickness,
+                               std::string ShowWindowName);
+
+    void MainWindow::Show2Image(cv::Mat Im, cv::Mat Im2, FileParams Params, FileParams Params2,
+                               bool sudocolor,
+                               bool showShape,
+                               bool showLine,
+                               float minIm, float maxIm, float minIm2, float maxIm2,
+                               int tileLineThickness,
+                               int featNr,
+                               float meanIntensityTreshold, float meanIntensityTreshold2,
+                               double lineLength,
                                int imposedLineThickness);
 
 private slots:
@@ -143,6 +165,29 @@ private slots:
     void on_doubleSpinBoxProcTresh_valueChanged(double arg1);
 
     void on_pushButton2_clicked();
+
+    void on_File2ListWidget_currentTextChanged(const QString &currentText);
+
+    void on_doubleSpinBoxImMin2_valueChanged(double arg1);
+
+    void on_doubleSpinBoxImMax2_valueChanged(double arg1);
+
+    void on_doubleSpinBoxProcTresh2_valueChanged(double arg1);
+
+    void on_checkBoxShowSecondIm_toggled(bool checked);
+
+    void on_checkBoxShowFirstIm_toggled(bool checked);
+
+    void on_checkBoxShowTwoIm_toggled(bool checked);
+
+    void on_pushButtonPlus_clicked();
+
+    void on_spinBoxZOffset_valueChanged(int arg1);
+
+    void on_pushButtonMinus_clicked();
+
+    void on_pushButtonCreateOut_clicked();
+
 
 private:
     Ui::MainWindow *ui;

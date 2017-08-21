@@ -44,6 +44,14 @@ MainWindow::MainWindow(QWidget *parent) :
     meanIntensityTreshold = ui->doubleSpinBoxProcTresh->value();
     lineLength = ui->spinBoxLineLength->value();
     imposedLineThickness = ui->spinBoxImposedLineThickness->value();
+    showFirstImage = ui->checkBoxShowFirstIm->checkState();
+    showSecondImage = ui->checkBoxShowSecondIm->checkState();
+    showTwoImages = ui->checkBoxShowTwoIm->checkState();
+    minIm2 = ui->doubleSpinBoxImMin2->value();
+    maxIm2 = ui->doubleSpinBoxImMax2->value();
+    meanIntensityTreshold2 = ui->doubleSpinBoxProcTresh2->value();
+    zOffset = ui->spinBoxZOffset->value();
+    zFrame = 0;
 }
 
 MainWindow::~MainWindow()
@@ -245,8 +253,8 @@ void MainWindow::ShowImage(cv::Mat Im, FileParams Params,
                            int featNr,
                            float meanIntensityTreshold,
                            double lineLength,
-                           int imposedLineThickness)
-
+                           int imposedLineThickness,
+                           std::string ShowWindowName)
 
 {
     int maxX = Im.cols;
@@ -335,8 +343,167 @@ void MainWindow::ShowImage(cv::Mat Im, FileParams Params,
             line(ImShow, Point(x - lineOffsetX, y - lineOffsetY), Point(x + lineOffsetX, y + lineOffsetY), Scalar(0, 0.0, 0.0, 0.0), imposedLineThickness);
         }
     }
-    imshow("Input image 1",ImShow);
+    imshow(ShowWindowName.c_str(),ImShow);
 }
+//----------------------------------------------------------------------------------------------------------------
+void MainWindow::Show2Image(cv::Mat Im, cv::Mat Im2, FileParams Params, FileParams Params2,
+                           bool sudocolor,
+                           bool showShape,
+                           bool showLine,
+                           float minIm, float maxIm, float minIm2, float maxIm2,
+                           int tileLineThickness,
+                           int featNr,
+                           float meanIntensityTreshold, float meanIntensityTreshold2,
+                           double lineLength,
+                           int imposedLineThickness)
+
+
+{
+    int maxX = Im.cols;
+    int maxY = Im.rows;
+
+    if(!maxX || ! maxY)
+    {
+        QMessageBox msgBox;
+        ui->textEdit->append("\n Image File not exists");
+        return;
+    }
+    Mat ImShow;
+    int maxX2 = Im2.cols;
+    int maxY2 = Im2.rows;
+
+    if(!maxX2 || ! maxY2)
+    {
+        QMessageBox msgBox;
+        ui->textEdit->append("\n Image File not exists");
+        return;
+    }
+    Mat ImShow2;
+
+    if(sudocolor)
+    {
+        ImShow = ShowImage16PseudoColor(Im,minIm,maxIm);
+        ImShow2 = ShowImage16PseudoColor(Im2,minIm2,maxIm2);
+    }
+    else
+    {
+        ImShow = Im;
+        ImShow2 = Im2;
+    }
+
+    if(showShape)
+    {
+        switch (Params.tileShape)
+        {
+        case 1:
+            for (int y = Params.offsetTileY; y <= (maxY - Params.offsetTileY); y += Params.shiftTileY)
+            {
+                for (int x = Params.offsetTileX; x <= (maxX - Params.offsetTileX); x += Params.shiftTileX)
+                {
+                    rectangle(ImShow, Point(x - Params.maxTileX / 2, y - Params.maxTileY / 2),
+                        Point(x - Params.maxTileX / 2 + Params.maxTileX - 1, y - Params.maxTileY / 2 + Params.maxTileY - 1),
+                        Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
+                    rectangle(ImShow2, Point(x - Params.maxTileX / 2, y - Params.maxTileY / 2),
+                        Point(x - Params.maxTileX / 2 + Params.maxTileX - 1, y - Params.maxTileY / 2 + Params.maxTileY - 1),
+                        Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
+                }
+            }
+            break;
+        case 2:
+            for (int y = Params.offsetTileY; y <= (maxY - Params.offsetTileY); y += Params.shiftTileY)
+            {
+                for (int x = Params.offsetTileX; x <= (maxX - Params.offsetTileX); x += Params.shiftTileX)
+                {
+                    ellipse(ImShow, Point(x, y),
+                        Size(Params.maxTileX / 2, Params.maxTileY / 2), 0.0, 0.0, 360.0,
+                        Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
+                    ellipse(ImShow2, Point(x, y),
+                        Size(Params.maxTileX / 2, Params.maxTileY / 2), 0.0, 0.0, 360.0,
+                        Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
+                }
+            }
+            break;
+        case 3:
+            for (int y = Params.offsetTileY; y <= (maxY - Params.offsetTileY); y += Params.shiftTileY)
+            {
+                for (int x = Params.offsetTileX; x <= (maxX - Params.offsetTileX); x += Params.shiftTileX)
+                {
+                    int edgeLength = Params.maxTileX;
+                    Point vertice0(x - edgeLength / 2, y - (int)((float)edgeLength * 0.8660254));
+                    Point vertice1(x + edgeLength - edgeLength / 2, y - (int)((float)edgeLength * 0.8660254));
+                    Point vertice2(x + edgeLength, y);
+                    Point vertice3(x + edgeLength - edgeLength / 2, y + (int)((float)edgeLength * 0.8660254));
+                    Point vertice4(x - edgeLength / 2, y + (int)((float)edgeLength * 0.8660254));
+                    Point vertice5(x - edgeLength, y);
+
+                    line(ImShow, vertice0, vertice1, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
+                    line(ImShow, vertice1, vertice2, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
+                    line(ImShow, vertice2, vertice3, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
+                    line(ImShow, vertice3, vertice4, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
+                    line(ImShow, vertice4, vertice5, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
+                    line(ImShow, vertice5, vertice0, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
+
+                    line(ImShow2, vertice0, vertice1, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
+                    line(ImShow2, vertice1, vertice2, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
+                    line(ImShow2, vertice2, vertice3, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
+                    line(ImShow2, vertice3, vertice4, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
+                    line(ImShow2, vertice4, vertice5, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
+                    line(ImShow2, vertice5, vertice0, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
+                }
+            }
+            break;
+        default:
+            break;
+        }
+
+    }
+    int numOfDirections = (int)Params.ParamsVect.size();
+
+    for(int i = 0; i < numOfDirections; i++)
+    {
+        int x  = Params.ParamsVect[i].tileX * Params.shiftTileX + Params.offsetTileX;
+        int y  = Params.ParamsVect[i].tileY * Params.shiftTileY + Params.offsetTileY;
+        double angle = Params.ParamsVect[i].Params[featNr];
+
+        int lineOffsetX = (int)round(lineLength * sin(angle * PI / 180.0));
+        int lineOffsetY = (int)round(lineLength * cos(angle * PI / 180.0));
+
+        if (angle >= -600 && showLine && Params.ParamsVect[i].Params[9] >= meanIntensityTreshold )
+        {
+            line(ImShow, Point(x - lineOffsetX, y - lineOffsetY), Point(x + lineOffsetX, y + lineOffsetY), Scalar(0, 0.0, 0.0, 0.0), imposedLineThickness);
+            line(ImShow2, Point(x - lineOffsetX, y - lineOffsetY), Point(x + lineOffsetX, y + lineOffsetY), Scalar(0, 0.0, 0.0, 0.0), imposedLineThickness);
+        }
+    }
+    numOfDirections = (int)Params2.ParamsVect.size();
+
+    for(int i = 0; i < numOfDirections; i++)
+    {
+        int x  = Params2.ParamsVect[i].tileX * Params2.shiftTileX + Params2.offsetTileX;
+        int y  = Params2.ParamsVect[i].tileY * Params2.shiftTileY + Params2.offsetTileY;
+        double angle = Params2.ParamsVect[i].Params[featNr];
+
+        int lineOffsetX = (int)round(lineLength * sin(angle * PI / 180.0));
+        int lineOffsetY = (int)round(lineLength * cos(angle * PI / 180.0));
+
+        if (angle >= -600 && showLine && Params2.ParamsVect[i].Params[9] >= meanIntensityTreshold2 )
+        {
+            line(ImShow, Point(x - lineOffsetX, y - lineOffsetY), Point(x + lineOffsetX, y + lineOffsetY), Scalar(250.0, 0.0, 0.0, 0.0), imposedLineThickness);
+            line(ImShow2, Point(x - lineOffsetX, y - lineOffsetY), Point(x + lineOffsetX, y + lineOffsetY), Scalar(250.0, 0.0, 0.0, 0.0), imposedLineThickness);
+        }
+    }
+
+    //imshow("Input image 1",ImShow);
+    //imshow("Input image 2",ImShow2);
+
+    Mat ImOut = Mat::zeros(Size(maxX + maxX2,maxY) ,ImShow.type());
+    ImShow.copyTo(ImOut(Rect(0, 0, ImShow.cols , ImShow.rows)));
+    ImShow2.copyTo(ImOut(Rect(maxX, 0, ImShow2.cols , ImShow2.rows)));
+
+    imshow("Two images",ImOut);
+}
+//----------------------------------------------------------------------------------------------------------------
+//void MainWindow::CalcOut(FileParams Params, FileParams Params2, int featNr, double meanIntensityTreshold, double meanIntensityTreshold2)
+
 
 //----------------------------------------------------------------------------------------------------------------
 void MainWindow::ProcessImage()
@@ -706,8 +873,12 @@ void MainWindow::on_FileListWidget_currentTextChanged(const QString &currentText
     FileToOpen.append(currentText.toStdWString());
     FilePar1 = GetDirectionData(FileToOpen);
     ImIn = imread(FilePar1.ImFileName.string().c_str(),CV_LOAD_IMAGE_ANYDEPTH);
-    ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
-              meanIntensityTreshold, lineLength, imposedLineThickness);
+    if(showFirstImage)
+        ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
+                  meanIntensityTreshold, lineLength, imposedLineThickness, "In File 1");
+    if(showTwoImages)
+        Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
+                   tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness);
     //ProcessImage();
 
 }
@@ -715,50 +886,99 @@ void MainWindow::on_FileListWidget_currentTextChanged(const QString &currentText
 void MainWindow::on_checkBoxShowSape_toggled(bool checked)
 {
     showShape = checked;
-    ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
-              meanIntensityTreshold, lineLength, imposedLineThickness);
+    if(showFirstImage)
+        ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
+                  meanIntensityTreshold, lineLength, imposedLineThickness, "In File 1");
+    if(showSecondImage)
+        ShowImage(ImIn2, FilePar2, sudocolor, showShape, showLine, minIm2, maxIm2, tileLineThickness, featNr,
+                  meanIntensityTreshold2, lineLength, imposedLineThickness, "In File 2");
+    if(showTwoImages)
+        Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
+                   tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness);
 }
 
 void MainWindow::on_checkBoxShowLine_toggled(bool checked)
 {
     showLine = checked;
-    ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
-              meanIntensityTreshold, lineLength, imposedLineThickness);
+    if(showFirstImage)
+        ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
+                  meanIntensityTreshold, lineLength, imposedLineThickness, "In File 1");
+    if(showSecondImage)
+        ShowImage(ImIn2, FilePar2, sudocolor, showShape, showLine, minIm2, maxIm2, tileLineThickness, featNr,
+                  meanIntensityTreshold2, lineLength, imposedLineThickness, "In File 2");
+    if(showTwoImages)
+        Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
+                   tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness);
 }
 
 void MainWindow::on_checkBoxShowSudoColor_toggled(bool checked)
 {
     sudocolor = checked;
-    ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
-              meanIntensityTreshold, lineLength, imposedLineThickness);
+    if(showFirstImage)
+        ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
+                  meanIntensityTreshold, lineLength, imposedLineThickness, "In File 1");
+    if(showSecondImage)
+        ShowImage(ImIn2, FilePar2, sudocolor, showShape, showLine, minIm2, maxIm2, tileLineThickness, featNr,
+                  meanIntensityTreshold2, lineLength, imposedLineThickness, "In File 2");
+    if(showTwoImages)
+        Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
+                   tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness);
 }
 
 void MainWindow::on_spinBoxImposedShapeThickness_valueChanged(int arg1)
 {
     tileLineThickness = arg1;
-    ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
-              meanIntensityTreshold, lineLength, imposedLineThickness);
+    if(showFirstImage)
+        ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
+                  meanIntensityTreshold, lineLength, imposedLineThickness, "In File 1");
+    if(showSecondImage)
+        ShowImage(ImIn2, FilePar2, sudocolor, showShape, showLine, minIm2, maxIm2, tileLineThickness, featNr,
+                  meanIntensityTreshold2, lineLength, imposedLineThickness, "In File 2");
+    if(showTwoImages)
+        Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
+                   tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness);
 }
 
 void MainWindow::on_spinBoxImposedLineThickness_valueChanged(int arg1)
 {
     imposedLineThickness = arg1;
-    ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
-              meanIntensityTreshold, lineLength, imposedLineThickness);
+    if(showFirstImage)
+        ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
+                  meanIntensityTreshold, lineLength, imposedLineThickness, "In File 1");
+    if(showSecondImage)
+        ShowImage(ImIn2, FilePar2, sudocolor, showShape, showLine, minIm2, maxIm2, tileLineThickness, featNr,
+                  meanIntensityTreshold2, lineLength, imposedLineThickness, "In File 2");
+    if(showTwoImages)
+        Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
+                   tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness);
 }
 
 void MainWindow::on_spinBoxLineLength_valueChanged(int arg1)
 {
     lineLength = arg1;
-    ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
-              meanIntensityTreshold, lineLength, imposedLineThickness);
+    if(showFirstImage)
+        ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
+                  meanIntensityTreshold, lineLength, imposedLineThickness, "In File 1");
+    if(showSecondImage)
+        ShowImage(ImIn2, FilePar2, sudocolor, showShape, showLine, minIm2, maxIm2, tileLineThickness, featNr,
+                  meanIntensityTreshold2, lineLength, imposedLineThickness, "In File 2");
+    if(showTwoImages)
+        Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
+                   tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness);
 }
 
 void MainWindow::on_spinBoxFeatureToShow_valueChanged(int arg1)
 {
     featNr = arg1;
-    ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
-              meanIntensityTreshold, lineLength, imposedLineThickness);
+    if(showFirstImage)
+        ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
+                  meanIntensityTreshold, lineLength, imposedLineThickness, "In File 1");
+    if(showSecondImage)
+        ShowImage(ImIn2, FilePar2, sudocolor, showShape, showLine, minIm2, maxIm2, tileLineThickness, featNr,
+                  meanIntensityTreshold2, lineLength, imposedLineThickness, "In File 2");
+    if(showTwoImages)
+        Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
+                   tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness);
 }
 
 void MainWindow::on_pushButtonChoseOutDir_clicked()
@@ -808,22 +1028,34 @@ void MainWindow::on_pushButtonSaveOut_pressed()
 void MainWindow::on_doubleSpinBoxImMin_valueChanged(double arg1)
 {
     minIm = arg1;
-    ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
-              meanIntensityTreshold, lineLength, imposedLineThickness);
+    if(showFirstImage)
+        ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
+                  meanIntensityTreshold, lineLength, imposedLineThickness, "In File 1");
+    if(showTwoImages)
+        Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
+                   tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness);
 }
 
 void MainWindow::on_doubleSpinBoxImMax_valueChanged(double arg1)
 {
     maxIm = arg1;
-    ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
-              meanIntensityTreshold, lineLength, imposedLineThickness);
+    if(showFirstImage)
+        ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
+                  meanIntensityTreshold, lineLength, imposedLineThickness, "In File 1");
+    if(showTwoImages)
+        Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
+                   tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness);
 }
 
 void MainWindow::on_doubleSpinBoxProcTresh_valueChanged(double arg1)
 {
     meanIntensityTreshold = arg1;
-    ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
-              meanIntensityTreshold, lineLength, imposedLineThickness);
+    if(showFirstImage)
+        ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
+                  meanIntensityTreshold, lineLength, imposedLineThickness, "In File 1");
+    if(showTwoImages)
+        Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
+                   tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness);
 }
 
 void MainWindow::on_pushButton2_clicked()
@@ -872,3 +1104,217 @@ void MainWindow::on_pushButton2_clicked()
         ui->File2ListWidget->addItem(PathLocal.filename().string().c_str());
     }
 }
+
+void MainWindow::on_File2ListWidget_currentTextChanged(const QString &currentText)
+{
+    FileToOpen2 = InputDirectory2;
+    FileToOpen2.append(currentText.toStdWString());
+    FilePar2 = GetDirectionData(FileToOpen2);
+    ImIn2 = imread(FilePar2.ImFileName.string().c_str(),CV_LOAD_IMAGE_ANYDEPTH);
+    if(showSecondImage)
+        ShowImage(ImIn2, FilePar2, sudocolor, showShape, showLine, minIm2, maxIm2, tileLineThickness, featNr,
+                  meanIntensityTreshold2, lineLength, imposedLineThickness, "In File 2");
+    if(showTwoImages)
+        Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
+                   tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness);
+    //ProcessImage();
+}
+
+void MainWindow::on_doubleSpinBoxImMin2_valueChanged(double arg1)
+{
+    minIm2 = arg1;
+    if(showSecondImage)
+        ShowImage(ImIn2, FilePar2, sudocolor, showShape, showLine, minIm2, maxIm2, tileLineThickness, featNr,
+                  meanIntensityTreshold2, lineLength, imposedLineThickness, "In File 2");
+    if(showTwoImages)
+        Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
+                   tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness);
+}
+
+void MainWindow::on_doubleSpinBoxImMax2_valueChanged(double arg1)
+{
+    maxIm2 = arg1;
+    if(showSecondImage)
+        ShowImage(ImIn2, FilePar2, sudocolor, showShape, showLine, minIm2, maxIm2, tileLineThickness, featNr,
+                  meanIntensityTreshold2, lineLength, imposedLineThickness, "In File 2");
+    if(showTwoImages)
+        Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
+                   tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness);
+}
+
+void MainWindow::on_doubleSpinBoxProcTresh2_valueChanged(double arg1)
+{
+    meanIntensityTreshold2 = arg1;
+    if(showSecondImage)
+        ShowImage(ImIn2, FilePar2, sudocolor, showShape, showLine, minIm2, maxIm2, tileLineThickness, featNr,
+                  meanIntensityTreshold2, lineLength, imposedLineThickness, "In File 2");
+    if(showTwoImages)
+        Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
+                   tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness);
+}
+
+void MainWindow::on_checkBoxShowSecondIm_toggled(bool checked)
+{
+    showSecondImage = checked;
+    if(showSecondImage)
+        ShowImage(ImIn2, FilePar2, sudocolor, showShape, showLine, minIm2, maxIm2, tileLineThickness, featNr,
+                  meanIntensityTreshold2, lineLength, imposedLineThickness, "In File 2");
+    else
+        destroyWindow("In File 2");
+}
+
+
+void MainWindow::on_checkBoxShowFirstIm_toggled(bool checked)
+{
+    showFirstImage = checked;
+    if(showFirstImage)
+        ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
+                  meanIntensityTreshold, lineLength, imposedLineThickness, "In File 1");
+    else
+        destroyWindow("In File 1");
+}
+
+void MainWindow::on_checkBoxShowTwoIm_toggled(bool checked)
+{
+    showTwoImages = checked;
+    if(showTwoImages)
+        Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
+                   tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness);
+    else
+        destroyWindow("Two images");
+}
+
+void MainWindow::on_pushButtonPlus_clicked()
+{
+    /*
+    if((zFrame + zOffset) > )
+        zFrame = ui->FileListWidget->count() - zOffset;
+    //z = ui->FileListWidget->currentRow();
+    */
+    zFrame++;
+
+    int rowCount = ui->FileListWidget->count();
+
+    if( zFrame >= rowCount)
+        zFrame = rowCount - 1;
+    if((zFrame + zOffset)>= rowCount)
+        zFrame = rowCount - zOffset -1;
+
+    ui->FileListWidget->setCurrentRow(zFrame);
+    ui->File2ListWidget->setCurrentRow(zFrame+zOffset);
+}
+
+void MainWindow::on_spinBoxZOffset_valueChanged(int arg1)
+{
+    zOffset = arg1;
+    int rowCount = ui->FileListWidget->count();
+
+    if( zFrame >= rowCount)
+        zFrame = rowCount - 1;
+    if((zFrame + zOffset)>= rowCount)
+        zFrame = rowCount - zOffset -1;
+
+    if( zFrame < 0)
+        zFrame = 0;
+    if((zFrame + zOffset)< 0)
+        zFrame = 0 - zOffset;
+
+
+    ui->FileListWidget->setCurrentRow(zFrame);
+    ui->File2ListWidget->setCurrentRow(zFrame + zOffset);
+}
+
+void MainWindow::on_pushButtonMinus_clicked()
+{
+    zFrame--;
+
+    if( zFrame < 0)
+        zFrame = 0;
+    if((zFrame + zOffset)< 0)
+        zFrame = 0 - zOffset;
+
+    ui->FileListWidget->setCurrentRow(zFrame);
+    ui->File2ListWidget->setCurrentRow(zFrame+zOffset);
+
+}
+
+void MainWindow::on_pushButtonCreateOut_clicked()
+{
+    for(int zOffset = -5;zOffset <=5; zOffset++)
+    {
+        string StrOut = "z Plane\ttile Y\ttile X\tdir Actin\tdir Calcein\tmean intensity Actin\tmean intensity Calcein\tAbs dir difference\n";
+
+        int start1;
+        int stop1;
+        int rowCount = ui->FileListWidget->count();
+
+        start1 = 0;
+        if((start1 + zOffset)< 0)
+            start1 = 0 - zOffset;
+
+        stop1 = rowCount;
+        if((stop1 + zOffset)>= rowCount)
+            stop1 = rowCount - zOffset;
+
+
+
+
+        for(int k = start1; k < stop1 ;k++)
+        {
+            path LocalFileToOpen;
+
+            LocalFileToOpen  = InputDirectory;
+            LocalFileToOpen.append(ui->FileListWidget->item(k)->text().toStdWString());
+            FileParams Params1 = GetDirectionData(LocalFileToOpen);
+
+            LocalFileToOpen  = InputDirectory2;
+            LocalFileToOpen.append(ui->File2ListWidget->item(k+zOffset)->text().toStdWString());
+            FileParams Params2 = GetDirectionData(LocalFileToOpen);
+
+            int numOfDirections = Params1.ParamsVect.size();
+            for(int i = 0; i < numOfDirections; i++)
+            {
+                int x  = Params1.ParamsVect[i].tileX;
+                int y  = Params1.ParamsVect[i].tileY;
+
+                double angle1 = Params1.ParamsVect[i].Params[featNr];
+                double angle2 = Params2.ParamsVect[i].Params[featNr];
+                double meanInt1 = Params1.ParamsVect[i].Params[9];
+                double meanInt2 = Params2.ParamsVect[i].Params[9];
+
+                if (angle1 >= -600 && angle2 >= -600 && meanInt1 >= meanIntensityTreshold && meanInt2 >= meanIntensityTreshold2 )
+                {
+                    double diff;
+                    if(angle1 > angle2)
+                        diff = angle1 - angle2;
+                    else
+                        diff = angle2 - angle1;
+
+                    if (diff > 90)
+                        diff = 180-diff;
+
+                    StrOut += to_string(k) + "\t";
+                    StrOut += to_string(y) + "\t";
+                    StrOut += to_string(x) + "\t";
+                    StrOut += to_string(angle1) + "\t";
+                    StrOut += to_string(angle2) + "\t";
+                    StrOut += to_string(meanInt1) + "\t";
+                    StrOut += to_string(meanInt2) + "\t";
+                    StrOut += to_string(diff) + "\n";
+                }
+            }
+
+
+        }
+        ui->textEdit->append(StrOut.c_str());
+        path OutFileName = OutputDirectory;
+        OutFileName.append("Summary ofset" + to_string(zOffset) + ".txt");
+        std::ofstream out(OutFileName.string().c_str());
+        out << StrOut;
+        out.close();
+    }
+
+
+}
+
+
