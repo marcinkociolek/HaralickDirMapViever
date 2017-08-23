@@ -29,6 +29,8 @@ public:
     boost::filesystem::path InputDirectory;
     boost::filesystem::path ImFileName;
 
+    boost::filesystem::path StartDir;
+
     boost::filesystem::path FileToOpen2;
     //    boost::filesystem::path CurrentDir2;
     boost::filesystem::path InputDirectory2;

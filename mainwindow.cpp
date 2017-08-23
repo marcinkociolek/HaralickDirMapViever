@@ -52,6 +52,7 @@ MainWindow::MainWindow(QWidget *parent) :
     meanIntensityTreshold2 = ui->doubleSpinBoxProcTresh2->value();
     zOffset = ui->spinBoxZOffset->value();
     zFrame = 0;
+    //StartDir("C:/Data/Sumona3Out/");
 }
 
 MainWindow::~MainWindow()
@@ -267,6 +268,7 @@ void MainWindow::ShowImage(cv::Mat Im, FileParams Params,
         return;
     }
     Mat ImShow;
+    Im.convertTo(Im,CV_16U);
 
     if(sudocolor)
         ImShow = ShowImage16PseudoColor(Im,minIm,maxIm);
@@ -379,7 +381,8 @@ void MainWindow::Show2Image(cv::Mat Im, cv::Mat Im2, FileParams Params, FilePara
         return;
     }
     Mat ImShow2;
-
+    Im.convertTo(Im,CV_16U);
+    Im2.convertTo(Im2,CV_16U);
     if(sudocolor)
     {
         ImShow = ShowImage16PseudoColor(Im,minIm,maxIm);
@@ -506,7 +509,7 @@ void MainWindow::on_pushButton_clicked()
 {
     QFileDialog dialog(this, "Open Folder");
     dialog.setFileMode(QFileDialog::Directory);
-    dialog.setDirectory("C:/Data/Sumona3Out/D28/20150819_28d_SC1_A2_Calc_PermOCN_ActinDAPI_1/");
+    //dialog.setDirectory("C:/Data/Sumona3Out/D28/20150819_28d_SC1_A2_Calc_PermOCN_ActinDAPI_1/");
 
     //QStringList FileList= dialog.e
     if(dialog.exec())
@@ -669,7 +672,7 @@ void MainWindow::on_pushButtonChoseOutDir_clicked()
 {
     QFileDialog dialog(this, "Open Folder");
     dialog.setFileMode(QFileDialog::Directory);
-    dialog.setDirectory("C:/Data");
+    //dialog.setDirectory("C:/Data");
 
     //QStringList FileList= dialog.e
     if(dialog.exec())
@@ -746,7 +749,7 @@ void MainWindow::on_pushButton2_clicked()
 {
     QFileDialog dialog(this, "Open Folder");
     dialog.setFileMode(QFileDialog::Directory);
-    dialog.setDirectory("C:/Data/Sumona3Out/D28/20150819_28d_SC1_A2_Calc_PermOCN_ActinDAPI_1/");
+    //dialog.setDirectory("C:/Data/Sumona3Out/D28/20150819_28d_SC1_A2_Calc_PermOCN_ActinDAPI_1/");
 
     //QStringList FileList= dialog.e
     if(dialog.exec())
@@ -928,7 +931,7 @@ void MainWindow::on_pushButtonCreateOut_clicked()
 {
     for(int zOffset = -10;zOffset <=10; zOffset++)
     {
-        string StrOut = "z Plane\ttile Y\ttile X\tdir Actin\tdir Calcein\tmean intensity Actin\tmean intensity Calcein\tAbs dir difference\n";
+        string StrOut = "Actin File Name\tCalcein File Name\t z Plane\ttile Y\ttile X\tdir Actin\tdir Calcein\tmean intensity Actin\tmean intensity Calcein\tAbs dir difference\n";
 
         int start1;
         int stop1;
@@ -979,6 +982,8 @@ void MainWindow::on_pushButtonCreateOut_clicked()
                     if (diff > 90)
                         diff = 180-diff;
 
+                    StrOut += ui->FileListWidget->item(k)->text().toStdString() + "\t";
+                    StrOut += ui->File2ListWidget->item(k)->text().toStdString() + "\t";
                     StrOut += to_string(k) + "\t";
                     StrOut += to_string(y) + "\t";
                     StrOut += to_string(x) + "\t";
@@ -994,7 +999,7 @@ void MainWindow::on_pushButtonCreateOut_clicked()
         }
         //ui->textEdit->append(StrOut.c_str());
         path OutFileName = OutputDirectory;
-        OutFileName.append("Summary ofset" + to_string(zOffset) + ".txt");
+        OutFileName.append("Summary ofset" + ItoStrLZPlusSign(zOffset,2) + ".txt");
         std::ofstream out(OutFileName.string().c_str());
         out << StrOut;
         out.close();
