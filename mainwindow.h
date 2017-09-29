@@ -191,6 +191,8 @@ private slots:
     void on_pushButtonCreateOut_clicked();
 
 
+    void on_pushCreateHist_clicked();
+
 private:
     Ui::MainWindow *ui;
 };

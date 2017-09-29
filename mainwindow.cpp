@@ -1010,3 +1010,85 @@ void MainWindow::on_pushButtonCreateOut_clicked()
 }
 
 
+
+void MainWindow::on_pushCreateHist_clicked()
+{
+    int start;
+    int stop;
+    int rowCount = ui->FileListWidget->count();
+
+    start = 0;
+
+    stop = rowCount;
+
+    float maxMean = 0.0;
+    float minMean = 1000000.0;
+
+    for(int k = start; k < stop ;k++)
+    {
+        path LocalFileToOpen;
+
+        LocalFileToOpen  = InputDirectory;
+        LocalFileToOpen.append(ui->FileListWidget->item(k)->text().toStdWString());
+        FileParams Params = GetDirectionData(LocalFileToOpen);
+
+        int numOfDirections = Params.ParamsVect.size();
+        for(int i = 0; i < numOfDirections; i++)
+        {
+            float meanInt = Params.ParamsVect[i].Params[9];
+            if(maxMean < meanInt)
+                maxMean = meanInt;
+            if(minMean > meanInt)
+                minMean = meanInt;
+        }
+    }
+
+
+    float maxHist = maxMean;
+    if(maxHist < 255)
+        maxHist = 255;
+    maxHist += 1;
+    int Hist[256];
+    for(int k = 0; k < 256 ;k++)
+        Hist[k] = 0;
+
+    float coefHist = 256.0 / maxHist;
+    for(int k = start; k < stop ;k++)
+    {
+        path LocalFileToOpen;
+
+        LocalFileToOpen  = InputDirectory;
+        LocalFileToOpen.append(ui->FileListWidget->item(k)->text().toStdWString());
+        FileParams Params = GetDirectionData(LocalFileToOpen);
+
+        int numOfDirections = Params.ParamsVect.size();
+        for(int i = 0; i < numOfDirections; i++)
+        {
+            float meanInt = Params.ParamsVect[i].Params[9];
+            int index  = floor(meanInt * coefHist);
+            if (index > 255)
+                index = 255;
+            Hist[index]++;
+        }
+    }
+    string StrOut = "";
+    StrOut += "Min Mean\t" + to_string(minMean) + "\n";
+    StrOut += "Max Mean\t" + to_string(maxMean) + "\n";
+    StrOut += "Max Hist\t" + to_string(maxHist) + "\n";
+    StrOut += "k\tIntensity\tHist\n";
+    for(int k = 0; k < 256 ;k++)
+    {
+        StrOut += to_string(k) + "\t" ;
+        StrOut += to_string((float)k / coefHist) + "\t" ;
+        StrOut += to_string(Hist[k]) + "\n" ;
+
+    }
+    //ui->textEdit->append(StrOut.c_str());
+    path OutFileName = OutputDirectory;
+    OutFileName.append("HistActin.txt");
+    std::ofstream out(OutFileName.string().c_str());
+    out << StrOut;
+    out.close();
+    StrOut.empty();
+
+}
