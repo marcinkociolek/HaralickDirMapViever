@@ -244,6 +244,9 @@ FileParams MainWindow::GetDirectionData(path FileToOpen)
     return LocalParams;
 }
 //----------------------------------------------------------------------------------------------------------------
+//FileParams MainWindow::GetStatisticalDataFromImage(path FileToOpen)
+
+//----------------------------------------------------------------------------------------------------------------
 void MainWindow::ShowImage(cv::Mat Im, FileParams Params,
                            bool sudocolor,
                            bool showShape,
