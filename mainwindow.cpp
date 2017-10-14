@@ -1095,3 +1095,41 @@ void MainWindow::on_pushCreateHist_clicked()
     StrOut.empty();
 
 }
+
+void MainWindow::on_pushButtonCreateGlobalHist_clicked()
+{
+    int start;
+    int stop;
+    int rowCount = ui->FileListWidget->count();
+
+    start = 0;
+
+    stop = rowCount;
+
+    float max = 0.0;
+    float min = 1000000.0;
+
+    for(int k = start; k < stop ;k++)
+    {
+        path LocalFileToOpen;
+
+        LocalFileToOpen  = InputDirectory;
+        LocalFileToOpen.append(ui->FileListWidget->item(k)->text().toStdWString());
+        FileParams Params = GetDirectionData(LocalFileToOpen);
+
+        int numOfDirections = Params.ParamsVect.size();
+        path ImFileName = Params.ImFileName;
+        Mat ImLocal = imread(FilePar1.ImFileName.string(),CV_LOAD_IMAGE_ANYDEPTH);
+        unsigned short *wImLocal = (unsigned short*)ImLocal.data;
+
+        for(int i = 0; i < numOfDirections; i++)
+        {
+            float meanInt = Params.ParamsVect[i].Params[9];
+            if(maxMean < meanInt)
+                maxMean = meanInt;
+            if(minMean > meanInt)
+                minMean = meanInt;
+        }
+    }
+
+}

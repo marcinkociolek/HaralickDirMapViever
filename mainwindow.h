@@ -193,6 +193,8 @@ private slots:
 
     void on_pushCreateHist_clicked();
 
+    void on_pushButtonCreateGlobalHist_clicked();
+
 private:
     Ui::MainWindow *ui;
 };
