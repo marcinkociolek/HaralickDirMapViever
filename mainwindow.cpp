@@ -1106,8 +1106,14 @@ void MainWindow::on_pushButtonCreateGlobalHist_clicked()
 
     stop = rowCount;
 
-    float max = 0.0;
-    float min = 1000000.0;
+    unsigned short max = 0;
+    unsigned short min = 65535;
+
+    int *Hist = new int[2048];
+    for(int k = 0; k < 2048 ;k++)
+        Hist[k] = 0;
+
+
 
     for(int k = start; k < stop ;k++)
     {
@@ -1117,19 +1123,53 @@ void MainWindow::on_pushButtonCreateGlobalHist_clicked()
         LocalFileToOpen.append(ui->FileListWidget->item(k)->text().toStdWString());
         FileParams Params = GetDirectionData(LocalFileToOpen);
 
-        int numOfDirections = Params.ParamsVect.size();
-        path ImFileName = Params.ImFileName;
-        Mat ImLocal = imread(FilePar1.ImFileName.string(),CV_LOAD_IMAGE_ANYDEPTH);
+        //int numOfDirections = Params.ParamsVect.size();
+        path ImFile = Params.ImFileName;
+        string FileName = ImFile.string();
+        if(!exists(ImFile))
+            continue;
+        Mat ImLocal = imread(FileName,CV_LOAD_IMAGE_ANYDEPTH);
+
+        int maxX = ImLocal.cols;
+        int maxY = ImLocal.rows;
+        int maxXY = maxX*maxY;
         unsigned short *wImLocal = (unsigned short*)ImLocal.data;
 
-        for(int i = 0; i < numOfDirections; i++)
+        for(int i = 0; i < maxXY; i++)
         {
-            float meanInt = Params.ParamsVect[i].Params[9];
-            if(maxMean < meanInt)
-                maxMean = meanInt;
-            if(minMean > meanInt)
-                minMean = meanInt;
+            unsigned short intensity = *wImLocal;
+            int index = (int)intensity/32;
+            if(max < intensity)
+                max = intensity;
+            if(min > intensity)
+                min = intensity;
+            Hist[index]++;
+            wImLocal++;
+
         }
     }
+
+    string StrOut = "";
+    StrOut += "Min Mean\t" + to_string(min) + "\n";
+    StrOut += "Max Mean\t" + to_string(max) + "\n";
+    //StrOut += "Max Hist\t" + to_string(maxHist) + "\n";
+    StrOut += "k\tIntensity\tHist\n";
+    for(int k = 0; k < 2048 ;k++)
+    {
+        StrOut += to_string(k) + "\t" ;
+        StrOut += to_string(k * 32) + "\t" ;
+        StrOut += to_string(Hist[k]) + "\n" ;
+
+    }
+    //ui->textEdit->append(StrOut.c_str());
+    path OutFileName = OutputDirectory;
+    OutFileName.append("HistActin.txt");
+    std::ofstream out(OutFileName.string().c_str());
+    out << StrOut;
+    out.close();
+    StrOut.empty();
+
+
+    delete Hist;
 
 }
