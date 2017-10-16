@@ -371,10 +371,10 @@
      <double>65535.000000000000000</double>
     </property>
     <property name="singleStep">
-     <double>128.000000000000000</double>
+     <double>1.000000000000000</double>
     </property>
     <property name="value">
-     <double>3000.000000000000000</double>
+     <double>10.000000000000000</double>
     </property>
    </widget>
    <widget class="QListWidget" name="File2ListWidget">
@@ -467,10 +467,10 @@
      <double>65535.000000000000000</double>
     </property>
     <property name="singleStep">
-     <double>128.000000000000000</double>
+     <double>1.000000000000000</double>
     </property>
     <property name="value">
-     <double>3000.000000000000000</double>
+     <double>10.000000000000000</double>
     </property>
    </widget>
    <widget class="QDoubleSpinBox" name="doubleSpinBoxImMin2">
@@ -630,7 +630,52 @@
      </rect>
     </property>
     <property name="text">
-     <string>stack pix params</string>
+     <string>Stack Hist 2k</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="pushButtonStackHist64k">
+    <property name="geometry">
+     <rect>
+      <x>430</x>
+      <y>500</y>
+      <width>80</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Stack Hist 64k</string>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="spinBoxIntensityThreshold">
+    <property name="geometry">
+     <rect>
+      <x>550</x>
+      <y>240</y>
+      <width>61</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="maximum">
+     <number>65535</number>
+    </property>
+    <property name="value">
+     <number>800</number>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="spinBoxIntensityThreshold2">
+    <property name="geometry">
+     <rect>
+      <x>680</x>
+      <y>240</y>
+      <width>61</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="maximum">
+     <number>65535</number>
+    </property>
+    <property name="value">
+     <number>800</number>
     </property>
    </widget>
   </widget>

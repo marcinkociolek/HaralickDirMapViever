@@ -65,6 +65,9 @@ public:
     int zOffset;
     int zFrame;
 
+    unsigned short intensityThresholdIm1;
+    unsigned short intensityThresholdIm2;
+
     //    int maxX;
 //    int maxY;
 
@@ -136,6 +139,9 @@ public:
                                float meanIntensityTreshold, float meanIntensityTreshold2,
                                double lineLength,
                                int imposedLineThickness);
+    void MainWindow::ImageAnalysis(cv::Mat Im, FileParams *Params, unsigned short threshold);
+
+    void MainWindow::ShowImages();
 
 private slots:
     void on_pushButton_clicked();
@@ -194,6 +200,12 @@ private slots:
     void on_pushCreateHist_clicked();
 
     void on_pushButtonCreateGlobalHist_clicked();
+
+    void on_pushButtonStackHist64k_clicked();
+
+    void on_spinBoxIntensityThreshold_valueChanged(int arg1);
+
+    void on_spinBoxIntensityThreshold2_valueChanged(int arg1);
 
 private:
     Ui::MainWindow *ui;

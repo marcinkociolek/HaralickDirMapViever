@@ -52,7 +52,10 @@ MainWindow::MainWindow(QWidget *parent) :
     meanIntensityTreshold2 = ui->doubleSpinBoxProcTresh2->value();
     zOffset = ui->spinBoxZOffset->value();
     zFrame = 0;
-    //StartDir("C:/Data/Sumona3Out/");
+    InputDirectory = "C:/Data/Sumona3Out/";
+
+    intensityThresholdIm1 = ui->spinBoxIntensityThreshold->value();
+    intensityThresholdIm2 = ui->spinBoxIntensityThreshold2->value();
 }
 
 MainWindow::~MainWindow()
@@ -351,6 +354,110 @@ void MainWindow::ShowImage(cv::Mat Im, FileParams Params,
     imshow(ShowWindowName.c_str(),ImShow);
 }
 //----------------------------------------------------------------------------------------------------------------
+void MainWindow::ImageAnalysis(cv::Mat Im, FileParams *Params, unsigned short intensityThreshold)
+{
+    Im.convertTo(Im,CV_16U);
+    Mat Roi;
+    int roiMaxX, roiMaxY; // Bounding box sizes for ROI
+    switch (Params->tileShape) // Different tile shapes
+    {
+    case 1: // Rectangle
+        roiMaxX = Params->maxTileX;
+        roiMaxY = Params->maxTileY;
+        Roi = Mat::ones(roiMaxY, roiMaxX, CV_16U);
+        break;
+    case 2: // Ellipse
+        roiMaxX = Params->maxTileX;
+        roiMaxY = Params->maxTileY;
+        Roi = Mat::zeros(roiMaxY, roiMaxX, CV_16U);
+        ellipse(Roi, Point(roiMaxX / 2, roiMaxY / 2),
+            Size(roiMaxX / 2, roiMaxY / 2), 0.0, 0.0, 360.0,
+            1, -1);
+        break;
+    case 3: // Hexagon
+    {
+        int edgeLength = Params->maxTileX;
+        roiMaxX = edgeLength * 2;
+        roiMaxY = (int)((float)edgeLength * 0.8660254 * 2.0);
+        Roi = Mat::zeros(roiMaxY, roiMaxX, CV_16U);
+
+        Point vertice0(edgeLength / 2, 0);
+        Point vertice1(edgeLength / 2 + edgeLength - 1, 0);
+        Point vertice2(roiMaxX - 1, roiMaxY / 2);
+        Point vertice3(edgeLength / 2 + edgeLength - 1, roiMaxY - 1);
+        Point vertice4(edgeLength / 2, roiMaxY - 1);
+        Point vertice5(0, roiMaxY / 2);
+
+        line(Roi, vertice0, vertice1, 1, 1);
+        line(Roi, vertice1, vertice2, 1, 1);
+        line(Roi, vertice2, vertice3, 1, 1);
+        line(Roi, vertice3, vertice4, 1, 1);
+        line(Roi, vertice4, vertice5, 1, 1);
+        line(Roi, vertice5, vertice0, 1, 1);
+        unsigned short *wRoi;
+
+        for (int y = 1; y < roiMaxY - 1; y++)
+        {
+            wRoi = (unsigned short *)Roi.data + roiMaxX * y;
+            int x = 0;
+            for (x; x < roiMaxX; x++)
+            {
+                if (*wRoi)
+                    break;
+                wRoi++;
+            }
+            x++;
+            wRoi++;
+            for (x; x < roiMaxX; x++)
+            {
+                if (*wRoi)
+                    break;
+                *wRoi = 1;
+                wRoi++;
+            }
+        }
+
+    }
+    break;
+    default:
+        break;
+    }
+    Mat SmallIm;
+    int numOfDirections = (int)Params->ParamsVect.size();
+    for(int i = 0; i < numOfDirections; i++)
+    {
+        int x  = Params->ParamsVect[i].tileX * Params->shiftTileX + Params->offsetTileX;
+        int y  = Params->ParamsVect[i].tileY * Params->shiftTileY + Params->offsetTileY;
+
+        Im(Rect(x - roiMaxX/2, y - roiMaxY/2, roiMaxX , roiMaxY)).copyTo(SmallIm);
+        unsigned short *wSmallIm =  (unsigned short *)SmallIm.data;
+        unsigned short *wRoi =  (unsigned short *)Roi.data;
+        int pixCount = 0;
+        int sigCount = 0;
+        for(int y = 0; y < roiMaxY; y++)
+        {
+            for(int x = 0; x < roiMaxX; x++)
+            {
+                if(*wRoi)
+                {
+                    pixCount++;
+                    if(*wSmallIm > intensityThreshold)
+                    {
+                        sigCount++;
+                    }
+
+                }
+                wRoi++;
+                wSmallIm++;
+            }
+
+        }
+        float percentage = float(sigCount)/float(pixCount)*100.0;
+        Params->ParamsVect[i].Params[9] = percentage;
+    }
+}
+
+//----------------------------------------------------------------------------------------------------------------
 void MainWindow::Show2Image(cv::Mat Im, cv::Mat Im2, FileParams Params, FileParams Params2,
                            bool sudocolor,
                            bool showShape,
@@ -508,11 +615,26 @@ void MainWindow::Show2Image(cv::Mat Im, cv::Mat Im2, FileParams Params, FilePara
     imshow("Two images",ImOut);
 }
 //------------------------------------------------------------------------------------------------------------------------------
+void MainWindow::ShowImages()
+{
+    if(showFirstImage)
+        ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
+                  meanIntensityTreshold, lineLength, imposedLineThickness, "In File 1");
+    if(showSecondImage)
+        ShowImage(ImIn2, FilePar2, sudocolor, showShape, showLine, minIm2, maxIm2, tileLineThickness, featNr,
+                  meanIntensityTreshold2, lineLength, imposedLineThickness, "In File 2");
+    if(showTwoImages)
+        Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
+                   tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness);
+
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
 void MainWindow::on_pushButton_clicked()
 {
     QFileDialog dialog(this, "Open Folder");
     dialog.setFileMode(QFileDialog::Directory);
-    //dialog.setDirectory("C:/Data/Sumona3Out/D28/20150819_28d_SC1_A2_Calc_PermOCN_ActinDAPI_1/");
+    dialog.setDirectory(InputDirectory.string().c_str());
 
     //QStringList FileList= dialog.e
     if(dialog.exec())
@@ -562,113 +684,52 @@ void MainWindow::on_FileListWidget_currentTextChanged(const QString &currentText
     FileToOpen.append(currentText.toStdWString());
     FilePar1 = GetDirectionData(FileToOpen);
     ImIn = imread(FilePar1.ImFileName.string().c_str(),CV_LOAD_IMAGE_ANYDEPTH);
-    if(showFirstImage)
-        ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
-                  meanIntensityTreshold, lineLength, imposedLineThickness, "In File 1");
-    if(showTwoImages)
-        Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
-                   tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness);
-    //ProcessImage();
-
+    medianBlur(ImIn,ImIn,3);
+    ImageAnalysis(ImIn, &FilePar1, intensityThresholdIm1);
+    ShowImages();
 
 }
 
 void MainWindow::on_checkBoxShowSape_toggled(bool checked)
 {
     showShape = checked;
-    if(showFirstImage)
-        ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
-                  meanIntensityTreshold, lineLength, imposedLineThickness, "In File 1");
-    if(showSecondImage)
-        ShowImage(ImIn2, FilePar2, sudocolor, showShape, showLine, minIm2, maxIm2, tileLineThickness, featNr,
-                  meanIntensityTreshold2, lineLength, imposedLineThickness, "In File 2");
-    if(showTwoImages)
-        Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
-                   tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness);
+    ShowImages();
 }
 
 void MainWindow::on_checkBoxShowLine_toggled(bool checked)
 {
     showLine = checked;
-    if(showFirstImage)
-        ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
-                  meanIntensityTreshold, lineLength, imposedLineThickness, "In File 1");
-    if(showSecondImage)
-        ShowImage(ImIn2, FilePar2, sudocolor, showShape, showLine, minIm2, maxIm2, tileLineThickness, featNr,
-                  meanIntensityTreshold2, lineLength, imposedLineThickness, "In File 2");
-    if(showTwoImages)
-        Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
-                   tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness);
+    ShowImages();
 }
 
 void MainWindow::on_checkBoxShowSudoColor_toggled(bool checked)
 {
     sudocolor = checked;
-    if(showFirstImage)
-        ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
-                  meanIntensityTreshold, lineLength, imposedLineThickness, "In File 1");
-    if(showSecondImage)
-        ShowImage(ImIn2, FilePar2, sudocolor, showShape, showLine, minIm2, maxIm2, tileLineThickness, featNr,
-                  meanIntensityTreshold2, lineLength, imposedLineThickness, "In File 2");
-    if(showTwoImages)
-        Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
-                   tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness);
+    ShowImages();
 }
 
 void MainWindow::on_spinBoxImposedShapeThickness_valueChanged(int arg1)
 {
     tileLineThickness = arg1;
-    if(showFirstImage)
-        ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
-                  meanIntensityTreshold, lineLength, imposedLineThickness, "In File 1");
-    if(showSecondImage)
-        ShowImage(ImIn2, FilePar2, sudocolor, showShape, showLine, minIm2, maxIm2, tileLineThickness, featNr,
-                  meanIntensityTreshold2, lineLength, imposedLineThickness, "In File 2");
-    if(showTwoImages)
-        Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
-                   tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness);
+    ShowImages();
 }
 
 void MainWindow::on_spinBoxImposedLineThickness_valueChanged(int arg1)
 {
     imposedLineThickness = arg1;
-    if(showFirstImage)
-        ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
-                  meanIntensityTreshold, lineLength, imposedLineThickness, "In File 1");
-    if(showSecondImage)
-        ShowImage(ImIn2, FilePar2, sudocolor, showShape, showLine, minIm2, maxIm2, tileLineThickness, featNr,
-                  meanIntensityTreshold2, lineLength, imposedLineThickness, "In File 2");
-    if(showTwoImages)
-        Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
-                   tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness);
+    ShowImages();
 }
 
 void MainWindow::on_spinBoxLineLength_valueChanged(int arg1)
 {
     lineLength = arg1;
-    if(showFirstImage)
-        ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
-                  meanIntensityTreshold, lineLength, imposedLineThickness, "In File 1");
-    if(showSecondImage)
-        ShowImage(ImIn2, FilePar2, sudocolor, showShape, showLine, minIm2, maxIm2, tileLineThickness, featNr,
-                  meanIntensityTreshold2, lineLength, imposedLineThickness, "In File 2");
-    if(showTwoImages)
-        Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
-                   tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness);
+    ShowImages();
 }
 
 void MainWindow::on_spinBoxFeatureToShow_valueChanged(int arg1)
 {
     featNr = arg1;
-    if(showFirstImage)
-        ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
-                  meanIntensityTreshold, lineLength, imposedLineThickness, "In File 1");
-    if(showSecondImage)
-        ShowImage(ImIn2, FilePar2, sudocolor, showShape, showLine, minIm2, maxIm2, tileLineThickness, featNr,
-                  meanIntensityTreshold2, lineLength, imposedLineThickness, "In File 2");
-    if(showTwoImages)
-        Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
-                   tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness);
+    ShowImages();
 }
 
 void MainWindow::on_pushButtonChoseOutDir_clicked()
@@ -718,34 +779,19 @@ void MainWindow::on_pushButtonSaveOut_pressed()
 void MainWindow::on_doubleSpinBoxImMin_valueChanged(double arg1)
 {
     minIm = arg1;
-    if(showFirstImage)
-        ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
-                  meanIntensityTreshold, lineLength, imposedLineThickness, "In File 1");
-    if(showTwoImages)
-        Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
-                   tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness);
+    ShowImages();
 }
 
 void MainWindow::on_doubleSpinBoxImMax_valueChanged(double arg1)
 {
     maxIm = arg1;
-    if(showFirstImage)
-        ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
-                  meanIntensityTreshold, lineLength, imposedLineThickness, "In File 1");
-    if(showTwoImages)
-        Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
-                   tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness);
+    ShowImages();
 }
 
 void MainWindow::on_doubleSpinBoxProcTresh_valueChanged(double arg1)
 {
     meanIntensityTreshold = arg1;
-    if(showFirstImage)
-        ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
-                  meanIntensityTreshold, lineLength, imposedLineThickness, "In File 1");
-    if(showTwoImages)
-        Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
-                   tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness);
+    ShowImages();
 }
 
 void MainWindow::on_pushButton2_clicked()
@@ -802,12 +848,9 @@ void MainWindow::on_File2ListWidget_currentTextChanged(const QString &currentTex
     FileToOpen2.append(currentText.toStdWString());
     FilePar2 = GetDirectionData(FileToOpen2);
     ImIn2 = imread(FilePar2.ImFileName.string().c_str(),CV_LOAD_IMAGE_ANYDEPTH);
-    if(showSecondImage)
-        ShowImage(ImIn2, FilePar2, sudocolor, showShape, showLine, minIm2, maxIm2, tileLineThickness, featNr,
-                  meanIntensityTreshold2, lineLength, imposedLineThickness, "In File 2");
-    if(showTwoImages)
-        Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
-                   tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness);
+    medianBlur(ImIn2,ImIn2,3);
+    ImageAnalysis(ImIn2, &FilePar2, intensityThresholdIm2);
+    ShowImages();
     //ProcessImage();
 
 }
@@ -815,34 +858,21 @@ void MainWindow::on_File2ListWidget_currentTextChanged(const QString &currentTex
 void MainWindow::on_doubleSpinBoxImMin2_valueChanged(double arg1)
 {
     minIm2 = arg1;
-    if(showSecondImage)
-        ShowImage(ImIn2, FilePar2, sudocolor, showShape, showLine, minIm2, maxIm2, tileLineThickness, featNr,
-                  meanIntensityTreshold2, lineLength, imposedLineThickness, "In File 2");
-    if(showTwoImages)
-        Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
-                   tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness);
+    ShowImages();
 }
 
 void MainWindow::on_doubleSpinBoxImMax2_valueChanged(double arg1)
 {
     maxIm2 = arg1;
-    if(showSecondImage)
-        ShowImage(ImIn2, FilePar2, sudocolor, showShape, showLine, minIm2, maxIm2, tileLineThickness, featNr,
-                  meanIntensityTreshold2, lineLength, imposedLineThickness, "In File 2");
-    if(showTwoImages)
-        Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
-                   tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness);
+    ShowImages();
 }
 
 void MainWindow::on_doubleSpinBoxProcTresh2_valueChanged(double arg1)
 {
     meanIntensityTreshold2 = arg1;
-    if(showSecondImage)
-        ShowImage(ImIn2, FilePar2, sudocolor, showShape, showLine, minIm2, maxIm2, tileLineThickness, featNr,
-                  meanIntensityTreshold2, lineLength, imposedLineThickness, "In File 2");
-    if(showTwoImages)
-        Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
-                   tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness);
+    medianBlur(ImIn,ImIn,3);
+    ImageAnalysis(ImIn, &FilePar1, intensityThresholdIm1);
+    ShowImages();
 }
 
 void MainWindow::on_checkBoxShowSecondIm_toggled(bool checked)
@@ -1172,4 +1202,199 @@ void MainWindow::on_pushButtonCreateGlobalHist_clicked()
 
     delete Hist;
 
+}
+
+void MainWindow::on_pushButtonStackHist64k_clicked()
+{
+    int startA;
+    int stopA;
+    int rowCountA = ui->FileListWidget->count();
+
+    startA = 0;
+
+    stopA = rowCountA;
+
+    unsigned short maxA = 0;
+    unsigned short minA = 65535;
+    int pixCountA = 0;
+    int fileCountA = 0;
+
+    int *HistA = new int[65536];
+    for(int k = 0; k < 65536 ;k++)
+        HistA[k] = 0;
+
+
+
+    for(int k = startA; k < stopA ;k++)
+    {
+
+        path LocalFileToOpenA;
+        LocalFileToOpenA  = InputDirectory;
+        LocalFileToOpenA.append(ui->FileListWidget->item(k)->text().toStdWString());
+        FileParams Params = GetDirectionData(LocalFileToOpenA);
+
+        //int numOfDirections = Params.ParamsVect.size();
+        path ImFile = Params.ImFileName;
+        string FileName = ImFile.string();
+
+        if(!exists(ImFile))
+            continue;
+        Mat ImLocal = imread(FileName,CV_LOAD_IMAGE_ANYDEPTH);
+        ImLocal.convertTo(ImLocal,CV_16U);
+        if(ImLocal.empty())
+            continue;
+
+        fileCountA++;
+
+        int maxX = ImLocal.cols;
+        int maxY = ImLocal.rows;
+        int maxXY = maxX*maxY;
+        unsigned short *wImLocal = (unsigned short*)ImLocal.data;
+
+        for(int i = 0; i < maxXY; i++)
+        {
+            pixCountA++;
+            unsigned short intensity = *wImLocal;
+            int index = (int)intensity;
+            if(maxA < intensity)
+                maxA = intensity;
+            if(minA > intensity)
+                minA = intensity;
+            HistA[index]++;
+            wImLocal++;
+
+        }
+    }
+
+    int maxHistAPos = 0;
+    int maxHistAVal = 0;
+
+    for(int k = 0; k < 65536 ;k++)
+    {
+        if(maxHistAVal < HistA[k])
+        {
+            maxHistAVal = HistA[k];
+            maxHistAPos = k;
+        }
+    }
+
+
+
+    int rowCountC = ui->File2ListWidget->count();
+
+    int startC = 0;
+
+    int stopC = rowCountC;
+
+    int maxC = 0;
+    int minC = 65535;
+    int pixCountC = 0;
+    int fileCountC = 0;
+
+    int *HistC = new int[65536];
+    for(int k = 0; k < 65536 ;k++)
+        HistC[k] = 0;
+
+
+
+    for(int k = startC; k < stopC ;k++)
+    {
+
+        path LocalFileToOpenC;
+        LocalFileToOpenC  = InputDirectory2;
+        LocalFileToOpenC.append(ui->File2ListWidget->item(k)->text().toStdWString());
+        FileParams Params = GetDirectionData(LocalFileToOpenC);
+
+        //int numOfDirections = Params.ParamsVect.size();
+        path ImFile = Params.ImFileName;
+        string FileName = ImFile.string();
+
+        if(!exists(ImFile))
+            continue;
+        Mat ImLocal = imread(FileName,CV_LOAD_IMAGE_ANYDEPTH);
+        ImLocal.convertTo(ImLocal,CV_16U);
+        if(ImLocal.empty())
+            continue;
+
+        fileCountC++;
+
+        int maxX = ImLocal.cols;
+        int maxY = ImLocal.rows;
+        int maxXY = maxX*maxY;
+        unsigned short *wImLocal = (unsigned short*)ImLocal.data;
+
+        for(int i = 0; i < maxXY; i++)
+        {
+            pixCountC++;
+            unsigned short intensity = *wImLocal;
+            int index = (int)intensity;
+            if(maxC < intensity)
+                maxC = intensity;
+            if(minC > intensity)
+                minC = intensity;
+            HistC[index]++;
+            wImLocal++;
+
+        }
+    }
+
+    int maxHistCPos = 0;
+    int maxHistCVal = 0;
+
+    for(int k = 0; k < 65536 ;k++)
+    {
+        if(maxHistCVal < HistC[k])
+        {
+            maxHistCVal = HistC[k];
+            maxHistCPos = k;
+        }
+    }
+
+    string StrOut = " val name \tActin \tCalcein\n";
+    StrOut += "FolderName\t" + InputDirectory.string() + "\t" + InputDirectory2.string() + "\n";
+    StrOut += "Pixel Count\t" + to_string(pixCountA)  + "\t" + to_string(pixCountC) + "\n";
+    StrOut += "File Count\t"  + to_string(fileCountA) + "\t" + to_string(fileCountC) + "\n";
+    StrOut += "Max Hist Position\t" + to_string(maxHistAPos) + "\t" + to_string(maxHistCPos) + "\n";
+    StrOut += "Max Hist Val\t" + to_string(maxHistAVal) + "\t" + to_string(maxHistCVal) + "\n";
+
+    StrOut += "Min Mean\t" + to_string(minA) + "\t" + to_string(minC) + "\n";
+    StrOut += "Max Mean\t" + to_string(maxA) + "\t" + to_string(maxC) + "\n";
+    //StrOut += "Max Hist\t" + to_string(maxHist) + "\n";
+    StrOut += "k\tIntensity\tHist\n";
+    for(int k = 0; k < 65535 ;k++)
+    {
+        StrOut += to_string(k) + "\t" ;
+        StrOut += to_string(k) + "\t" ;
+        StrOut += to_string(HistA[k]) + "\t" ;
+        StrOut += to_string(HistC[k]) + "\n" ;
+    }
+    //ui->textEdit->append(StrOut.c_str());
+    path OutFileName = OutputDirectory;
+    OutFileName.append("StackHistActinCalcein64K.txt");
+    std::ofstream out2(OutFileName.string().c_str());
+    out2 << StrOut;
+    out2.close();
+    StrOut.empty();
+
+
+
+    delete[] HistA;
+    delete[] HistC;
+
+}
+
+void MainWindow::on_spinBoxIntensityThreshold_valueChanged(int arg1)
+{
+    intensityThresholdIm1 = arg1;
+    ImageAnalysis(ImIn, &FilePar1, intensityThresholdIm1);
+
+    ShowImages();
+}
+
+void MainWindow::on_spinBoxIntensityThreshold2_valueChanged(int arg1)
+{
+    intensityThresholdIm2 = arg1;
+    ImageAnalysis(ImIn2, &FilePar2, intensityThresholdIm2);
+
+    ShowImages();
 }
