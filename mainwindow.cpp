@@ -988,10 +988,16 @@ void MainWindow::on_pushButtonCreateOut_clicked()
             LocalFileToOpen  = InputDirectory;
             LocalFileToOpen.append(ui->FileListWidget->item(k)->text().toStdWString());
             FileParams Params1 = GetDirectionData(LocalFileToOpen);
+            ImIn = imread(Params1.ImFileName.string().c_str(),CV_LOAD_IMAGE_ANYDEPTH);
+            medianBlur(ImIn,ImIn,3);
+            ImageAnalysis(ImIn, &Params1, intensityThresholdIm1);
+
 
             LocalFileToOpen  = InputDirectory2;
             LocalFileToOpen.append(ui->File2ListWidget->item(k+zOffset)->text().toStdWString());
             FileParams Params2 = GetDirectionData(LocalFileToOpen);
+            ImIn = imread(Params2.ImFileName.string().c_str(),CV_LOAD_IMAGE_ANYDEPTH);
+            medianBlur(ImIn,ImIn,3);
 
             int numOfDirections = Params1.ParamsVect.size();
             for(int i = 0; i < numOfDirections; i++)
