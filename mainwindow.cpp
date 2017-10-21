@@ -998,6 +998,7 @@ void MainWindow::on_pushButtonCreateOut_clicked()
             FileParams Params2 = GetDirectionData(LocalFileToOpen);
             ImIn = imread(Params2.ImFileName.string().c_str(),CV_LOAD_IMAGE_ANYDEPTH);
             medianBlur(ImIn,ImIn,3);
+            ImageAnalysis(ImIn, &Params2, intensityThresholdIm1);
 
             int numOfDirections = Params1.ParamsVect.size();
             for(int i = 0; i < numOfDirections; i++)
