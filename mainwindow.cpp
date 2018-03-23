@@ -21,6 +21,7 @@
 #include "DispLib.h"
 #include "StringFcLib.h"
 #include "tileparams.h"
+#include "dirdetectionparams.h"
 
 #define PI 3.14159265
 
@@ -66,6 +67,190 @@ MainWindow::~MainWindow()
 FileParams MainWindow::GetDirectionData(path FileToOpen)
 {
     FileParams LocalParams;
+    //check if file exists
+    if (!exists(FileToOpen))
+        return LocalParams;
+    std::ifstream inFile1(FileToOpen.string());
+    if (!inFile1.is_open())
+    {
+        QMessageBox msgBox;
+        msgBox.setText((FileToOpen.filename().string() + " File not exists" ).c_str());
+        msgBox.exec();
+        return LocalParams;
+    }
+    // ------------------read params from file-----------------------------
+
+    string Line1,Line2;
+
+    //read input directory
+    bool inputDirFound = 0;
+    while (inFile1.good())
+    {
+        getline(inFile1, Line1,'\t');
+        getline(inFile1, Line2);
+        regex LinePattern("Input Directory 1:");
+        if (regex_match(Line1.c_str(), LinePattern))
+        {
+            inputDirFound = 1;
+            break;
+        }
+    }
+    LocalParams.ImFileName = Line2;
+    //path ImFileName(Line2);
+
+    // read tile shape
+    while (inFile1.good())
+    {
+        getline(inFile1, Line1);
+        regex LinePattern("Tile Shape:.+");
+        if (regex_match(Line1.c_str(), LinePattern))
+        {
+            break;
+        }
+    }
+
+    LocalParams.tileShape = stoi(Line1.substr(12,1));
+
+    //readTileSizeX
+    while (inFile1.good())
+    {
+        getline(inFile1, Line1);
+
+        regex LinePattern("Tile size x.+");
+        if (regex_match(Line1.c_str(), LinePattern))
+        {
+            break;
+        }
+    }
+    LocalParams.maxTileX = stoi(Line1.substr(13));
+    //readTileSizeY
+    while (inFile1.good())
+    {
+        getline(inFile1, Line1);
+
+        regex LinePattern("Tile size y.+");
+        if (regex_match(Line1.c_str(), LinePattern))
+        {
+            break;
+        }
+    }
+    LocalParams.maxTileY = stoi(Line1.substr(13));
+    //read shiftTileX
+    while (inFile1.good())
+    {
+        getline(inFile1, Line1);
+
+        regex LinePattern("Tile shift x:.+");
+        if (regex_match(Line1.c_str(), LinePattern))
+        {
+            break;
+        }
+    }
+    LocalParams.shiftTileX = stoi(Line1.substr(14));
+    //read shiftTileY
+    while (inFile1.good())
+    {
+        getline(inFile1, Line1);
+
+        regex LinePattern("Tile shift y:.+");
+        if (regex_match(Line1.c_str(), LinePattern))
+        {
+            break;
+        }
+    }
+    LocalParams.shiftTileY = stoi(Line1.substr(14));
+
+    //read offsetTileX
+    while (inFile1.good())
+    {
+        getline(inFile1, Line1);
+
+        regex LinePattern("Tile offset x:.+");
+        if (regex_match(Line1.c_str(), LinePattern))
+        {
+            break;
+        }
+    }
+    LocalParams.offsetTileX = stoi(Line1.substr(15));
+
+    //read offsetTileY
+    while (inFile1.good())
+    {
+        getline(inFile1, Line1);
+
+        regex LinePattern("Tile offset y:.+");
+        if (regex_match(Line1.c_str(), LinePattern))
+        {
+            break;
+        }
+    }
+    LocalParams.offsetTileY = stoi(Line1.substr(15));
+
+
+    // read input file name
+    while (inFile1.good())
+    {
+        getline(inFile1, Line1);
+
+        regex LinePattern("In file - .+");
+        if (regex_match(Line1.c_str(), LinePattern))
+        {
+            break;
+        }
+    }
+    LocalParams.ImFileName.append(Line1.substr(10));
+
+    // read size of data vector
+    while (inFile1.good())
+    {
+        getline(inFile1, Line1);
+
+        regex LinePattern("Tile Y.+");
+        if (regex_match(Line1.c_str(), LinePattern))
+        {
+            break;
+        }
+    }
+    LocalParams.ValueCount = 0;
+    size_t stringPos = 0;
+    while(1)
+    {
+        stringPos = Line1.find("\t",stringPos);
+        LocalParams.ValueCount++;
+        if(stringPos != string::npos)
+            break;
+        stringPos++;
+    }
+    // read feature names
+    std::stringstream InStringStream(Line1);
+
+    LocalParams.NamesVector.empty();
+    char FeatName[256];
+    while(InStringStream.good())
+    {
+        InStringStream.getline(FeatName,250,'\t');
+        LocalParams.NamesVector.push_back(FeatName);
+    }
+
+    //list<int> TilesParams;
+    LocalParams.ParamsVect.empty();
+//read directionalities
+    while(inFile1.good())
+    {
+        TileParams params;
+        getline(inFile1,Line1);
+        params.FromString(Line1);
+        if(params.tileX > -1 && params.tileY > -1)
+            LocalParams.ParamsVect.push_back(params);
+    }
+
+    inFile1.close();
+    return LocalParams;
+}
+//----------------------------------------------------------------------------------------------------------------
+DirDetectionParams MainWindow::GetDirectionData2(path FileToOpen)
+{
+    DirDetectionParams LocalParams;
     //check if file exists
     if (!exists(FileToOpen))
         return LocalParams;

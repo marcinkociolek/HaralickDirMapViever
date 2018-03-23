@@ -8,6 +8,7 @@
 #include <QMainWindow>
 
 #include "tileparams.h"
+#include "dirdetectionparams.h"
 
 //using namespace boost::filesystem;
 //using namespace cv;
@@ -114,7 +115,7 @@ public:
 
     //float
     FileParams MainWindow::GetDirectionData(boost::filesystem::path FileToOpen);
-
+    DirDetectionParams MainWindow::GetDirectionData2(boost::filesystem::path FileToOpen);
 
     void MainWindow::ShowImage(cv::Mat Im, FileParams Params,
                                bool sudocolor,
