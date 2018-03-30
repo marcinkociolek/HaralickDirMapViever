@@ -30,6 +30,46 @@ using namespace std;
 using namespace boost::filesystem;
 using namespace cv;
 
+//----------------------------------------------------------------------------------
+void ShowShape(Mat ImShow, int x,int y, int tileShape, int tileSize, int tileLineThickness)
+{
+    switch (tileShape)
+    {
+    case 1:
+        rectangle(ImShow, Point(x - tileSize / 2, y - tileSize / 2),
+            Point(x - tileSize / 2 + tileSize, y - tileSize / 2 + tileSize / 2),
+            Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
+        break;
+    case 2:
+        ellipse(ImShow, Point(x, y),
+            Size(tileSize / 2, tileSize / 2), 0.0, 0.0, 360.0,
+            Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
+        break;
+    case 3:
+
+    {
+        int edgeLength = tileSize / 2;
+        Point vertice0(x - edgeLength / 2, y - (int)((float)edgeLength * 0.8660254));
+        Point vertice1(x + edgeLength - edgeLength / 2, y - (int)((float)edgeLength * 0.8660254));
+        Point vertice2(x + edgeLength, y);
+        Point vertice3(x + edgeLength - edgeLength / 2, y + (int)((float)edgeLength * 0.8660254));
+        Point vertice4(x - edgeLength / 2, y + (int)((float)edgeLength * 0.8660254));
+        Point vertice5(x - edgeLength, y);
+
+        line(ImShow, vertice0, vertice1, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
+        line(ImShow, vertice1, vertice2, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
+        line(ImShow, vertice2, vertice3, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
+        line(ImShow, vertice3, vertice4, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
+        line(ImShow, vertice4, vertice5, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
+        line(ImShow, vertice5, vertice0, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
+    }
+        break;
+    default:
+        break;
+    }
+}
+
+//--------------------------------------------------------------------------------
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -64,6 +104,7 @@ MainWindow::~MainWindow()
     delete ui;
 }
 //----------------------------------------------------------------------------------------------------------------
+/*
 FileParams MainWindow::GetDirectionData(path FileToOpen)
 {
     FileParams LocalParams;
@@ -247,10 +288,11 @@ FileParams MainWindow::GetDirectionData(path FileToOpen)
     inFile1.close();
     return LocalParams;
 }
+*/
 //----------------------------------------------------------------------------------------------------------------
-DirDetectionParams MainWindow::GetDirectionData2(path FileToOpen)
+FileParams  MainWindow::GetDirectionData(path FileToOpen)
 {
-    DirDetectionParams LocalParams;
+    FileParams LocalParams;
     //check if file exists
     if (!exists(FileToOpen))
         return LocalParams;
@@ -264,133 +306,68 @@ DirDetectionParams MainWindow::GetDirectionData2(path FileToOpen)
     }
     // ------------------read params from file-----------------------------
 
-    string Line1,Line2;
+    string Line;
 
     //read input directory
     bool inputDirFound = 0;
     while (inFile1.good())
     {
-        getline(inFile1, Line1,'\t');
-        getline(inFile1, Line2);
-        regex LinePattern("Input Directory 1:");
-        if (regex_match(Line1.c_str(), LinePattern))
+        getline(inFile1, Line);
+        regex LinePattern("Input Directory 1:.+");
+        if (regex_match(Line.c_str(), LinePattern))
         {
             inputDirFound = 1;
             break;
         }
     }
-    LocalParams.ImFileName = Line2;
+    LocalParams.ImFolderName = Line.substr(18);
     //path ImFileName(Line2);
 
     // read tile shape
     while (inFile1.good())
     {
-        getline(inFile1, Line1);
+        getline(inFile1, Line);
         regex LinePattern("Tile Shape:.+");
-        if (regex_match(Line1.c_str(), LinePattern))
+        if (regex_match(Line.c_str(), LinePattern))
         {
             break;
         }
     }
 
-    LocalParams.tileShape = stoi(Line1.substr(12,1));
+    LocalParams.tileShape = stoi(Line.substr(12,1));
 
     //readTileSizeX
     while (inFile1.good())
     {
-        getline(inFile1, Line1);
+        getline(inFile1, Line);
 
-        regex LinePattern("Tile size x.+");
-        if (regex_match(Line1.c_str(), LinePattern))
+        regex LinePattern("Tile width x:.+");
+        if (regex_match(Line.c_str(), LinePattern))
         {
             break;
         }
     }
-    LocalParams.maxTileX = stoi(Line1.substr(13));
-    //readTileSizeY
-    while (inFile1.good())
-    {
-        getline(inFile1, Line1);
-
-        regex LinePattern("Tile size y.+");
-        if (regex_match(Line1.c_str(), LinePattern))
-        {
-            break;
-        }
-    }
-    LocalParams.maxTileY = stoi(Line1.substr(13));
-    //read shiftTileX
-    while (inFile1.good())
-    {
-        getline(inFile1, Line1);
-
-        regex LinePattern("Tile shift x:.+");
-        if (regex_match(Line1.c_str(), LinePattern))
-        {
-            break;
-        }
-    }
-    LocalParams.shiftTileX = stoi(Line1.substr(14));
-    //read shiftTileY
-    while (inFile1.good())
-    {
-        getline(inFile1, Line1);
-
-        regex LinePattern("Tile shift y:.+");
-        if (regex_match(Line1.c_str(), LinePattern))
-        {
-            break;
-        }
-    }
-    LocalParams.shiftTileY = stoi(Line1.substr(14));
-
-    //read offsetTileX
-    while (inFile1.good())
-    {
-        getline(inFile1, Line1);
-
-        regex LinePattern("Tile offset x:.+");
-        if (regex_match(Line1.c_str(), LinePattern))
-        {
-            break;
-        }
-    }
-    LocalParams.offsetTileX = stoi(Line1.substr(15));
-
-    //read offsetTileY
-    while (inFile1.good())
-    {
-        getline(inFile1, Line1);
-
-        regex LinePattern("Tile offset y:.+");
-        if (regex_match(Line1.c_str(), LinePattern))
-        {
-            break;
-        }
-    }
-    LocalParams.offsetTileY = stoi(Line1.substr(15));
-
-
+    LocalParams.tileSize = stoi(Line.substr(13));
     // read input file name
     while (inFile1.good())
     {
-        getline(inFile1, Line1);
+        getline(inFile1, Line);
 
-        regex LinePattern("In file - .+");
-        if (regex_match(Line1.c_str(), LinePattern))
+        regex LinePattern("FileName.+");
+        if (regex_match(Line.c_str(), LinePattern))
         {
             break;
         }
     }
-    LocalParams.ImFileName.append(Line1.substr(10));
+    LocalParams.ImFileName.append(Line.substr(10));
 
     // read size of data vector
     while (inFile1.good())
     {
-        getline(inFile1, Line1);
+        getline(inFile1, Line);
 
         regex LinePattern("Tile Y.+");
-        if (regex_match(Line1.c_str(), LinePattern))
+        if (regex_match(Line.c_str(), LinePattern))
         {
             break;
         }
@@ -399,21 +376,21 @@ DirDetectionParams MainWindow::GetDirectionData2(path FileToOpen)
     size_t stringPos = 0;
     while(1)
     {
-        stringPos = Line1.find("\t",stringPos);
+        stringPos = Line.find("\t",stringPos);
         LocalParams.ValueCount++;
         if(stringPos != string::npos)
             break;
         stringPos++;
     }
     // read feature names
-    std::stringstream InStringStream(Line1);
+    std::stringstream InStringStream(Line);
 
     LocalParams.NamesVector.empty();
-    char FeatName[256];
+    char ColumnName[256];
     while(InStringStream.good())
     {
-        InStringStream.getline(FeatName,250,'\t');
-        LocalParams.NamesVector.push_back(FeatName);
+        InStringStream.getline(ColumnName,250,'\t');
+        LocalParams.NamesVector.push_back(ColumnName);
     }
 
     //list<int> TilesParams;
@@ -422,8 +399,8 @@ DirDetectionParams MainWindow::GetDirectionData2(path FileToOpen)
     while(inFile1.good())
     {
         TileParams params;
-        getline(inFile1,Line1);
-        params.FromString(Line1);
+        getline(inFile1,Line);
+        params.FromString(Line);
         if(params.tileX > -1 && params.tileY > -1)
             LocalParams.ParamsVect.push_back(params);
     }
@@ -466,72 +443,24 @@ void MainWindow::ShowImage(cv::Mat Im, FileParams Params,
     else
         ImShow = Im;
 
-    if(showShape)
-    {
-        switch (Params.tileShape)
-        {
-        case 1:
-            for (int y = Params.offsetTileY; y <= (maxY - Params.offsetTileY); y += Params.shiftTileY)
-            {
-                for (int x = Params.offsetTileX; x <= (maxX - Params.offsetTileX); x += Params.shiftTileX)
-                {
-                    rectangle(ImShow, Point(x - Params.maxTileX / 2, y - Params.maxTileY / 2),
-                        Point(x - Params.maxTileX / 2 + Params.maxTileX - 1, y - Params.maxTileY / 2 + Params.maxTileY - 1),
-                        Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
-                }
-            }
-            break;
-        case 2:
-            for (int y = Params.offsetTileY; y <= (maxY - Params.offsetTileY); y += Params.shiftTileY)
-            {
-                for (int x = Params.offsetTileX; x <= (maxX - Params.offsetTileX); x += Params.shiftTileX)
-                {
-                    ellipse(ImShow, Point(x, y),
-                        Size(Params.maxTileX / 2, Params.maxTileY / 2), 0.0, 0.0, 360.0,
-                        Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
-                }
-            }
-            break;
-        case 3:
-            for (int y = Params.offsetTileY; y <= (maxY - Params.offsetTileY); y += Params.shiftTileY)
-            {
-                for (int x = Params.offsetTileX; x <= (maxX - Params.offsetTileX); x += Params.shiftTileX)
-                {
-                    int edgeLength = Params.maxTileX;
-                    Point vertice0(x - edgeLength / 2, y - (int)((float)edgeLength * 0.8660254));
-                    Point vertice1(x + edgeLength - edgeLength / 2, y - (int)((float)edgeLength * 0.8660254));
-                    Point vertice2(x + edgeLength, y);
-                    Point vertice3(x + edgeLength - edgeLength / 2, y + (int)((float)edgeLength * 0.8660254));
-                    Point vertice4(x - edgeLength / 2, y + (int)((float)edgeLength * 0.8660254));
-                    Point vertice5(x - edgeLength, y);
+    //
 
-                    line(ImShow, vertice0, vertice1, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
-                    line(ImShow, vertice1, vertice2, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
-                    line(ImShow, vertice2, vertice3, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
-                    line(ImShow, vertice3, vertice4, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
-                    line(ImShow, vertice4, vertice5, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
-                    line(ImShow, vertice5, vertice0, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
-
-                }
-            }
-            break;
-        default:
-            break;
-        }
-
-    }
     int numOfDirections = (int)Params.ParamsVect.size();
 
     for(int i = 0; i < numOfDirections; i++)
     {
-        int x  = Params.ParamsVect[i].tileX * Params.shiftTileX + Params.offsetTileX;
-        int y  = Params.ParamsVect[i].tileY * Params.shiftTileY + Params.offsetTileY;
+        int x  = Params.ParamsVect[i].tileX;
+        int y  = Params.ParamsVect[i].tileY;
         double angle = Params.ParamsVect[i].Params[featNr];
+
+        if(showShape)
+            ShowShape(ImShow, x, y, Params.tileShape, Params.tileSize, tileLineThickness);
+
 
         int lineOffsetX = (int)round(lineLength * sin(angle * PI / 180.0));
         int lineOffsetY = (int)round(lineLength * cos(angle * PI / 180.0));
 
-        if (angle >= -600 && showLine && Params.ParamsVect[i].Params[9] >= meanIntensityTreshold )
+        if (angle >= -600 && showLine && Params.ParamsVect[i].Params[0] >= meanIntensityTreshold )
         {
             line(ImShow, Point(x - lineOffsetX, y - lineOffsetY), Point(x + lineOffsetX, y + lineOffsetY), Scalar(0, 0.0, 0.0, 0.0), imposedLineThickness);
         }
@@ -547,13 +476,13 @@ void MainWindow::ImageAnalysis(cv::Mat Im, FileParams *Params, unsigned short in
     switch (Params->tileShape) // Different tile shapes
     {
     case 1: // Rectangle
-        roiMaxX = Params->maxTileX;
-        roiMaxY = Params->maxTileY;
+        roiMaxX = Params->tileSize;
+        roiMaxY = Params->tileSize;
         Roi = Mat::ones(roiMaxY, roiMaxX, CV_16U);
         break;
     case 2: // Ellipse
-        roiMaxX = Params->maxTileX;
-        roiMaxY = Params->maxTileY;
+        roiMaxX = Params->tileSize;
+        roiMaxY = Params->tileSize;
         Roi = Mat::zeros(roiMaxY, roiMaxX, CV_16U);
         ellipse(Roi, Point(roiMaxX / 2, roiMaxY / 2),
             Size(roiMaxX / 2, roiMaxY / 2), 0.0, 0.0, 360.0,
@@ -561,7 +490,7 @@ void MainWindow::ImageAnalysis(cv::Mat Im, FileParams *Params, unsigned short in
         break;
     case 3: // Hexagon
     {
-        int edgeLength = Params->maxTileX;
+        int edgeLength = Params->tileSize / 2;
         roiMaxX = edgeLength * 2;
         roiMaxY = (int)((float)edgeLength * 0.8660254 * 2.0);
         Roi = Mat::zeros(roiMaxY, roiMaxX, CV_16U);
@@ -611,8 +540,8 @@ void MainWindow::ImageAnalysis(cv::Mat Im, FileParams *Params, unsigned short in
     int numOfDirections = (int)Params->ParamsVect.size();
     for(int i = 0; i < numOfDirections; i++)
     {
-        int x  = Params->ParamsVect[i].tileX * Params->shiftTileX + Params->offsetTileX;
-        int y  = Params->ParamsVect[i].tileY * Params->shiftTileY + Params->offsetTileY;
+        int x  = Params->ParamsVect[i].tileX;
+        int y  = Params->ParamsVect[i].tileY;
 
         Im(Rect(x - roiMaxX/2, y - roiMaxY/2, roiMaxX , roiMaxY)).copyTo(SmallIm);
         unsigned short *wSmallIm =  (unsigned short *)SmallIm.data;
@@ -689,79 +618,17 @@ void MainWindow::Show2Image(cv::Mat Im, cv::Mat Im2, FileParams Params, FilePara
         ImShow2 = Im2;
     }
 
-    if(showShape)
-    {
-        switch (Params.tileShape)
-        {
-        case 1:
-            for (int y = Params.offsetTileY; y <= (maxY - Params.offsetTileY); y += Params.shiftTileY)
-            {
-                for (int x = Params.offsetTileX; x <= (maxX - Params.offsetTileX); x += Params.shiftTileX)
-                {
-                    rectangle(ImShow, Point(x - Params.maxTileX / 2, y - Params.maxTileY / 2),
-                        Point(x - Params.maxTileX / 2 + Params.maxTileX - 1, y - Params.maxTileY / 2 + Params.maxTileY - 1),
-                        Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
-                    rectangle(ImShow2, Point(x - Params.maxTileX / 2, y - Params.maxTileY / 2),
-                        Point(x - Params.maxTileX / 2 + Params.maxTileX - 1, y - Params.maxTileY / 2 + Params.maxTileY - 1),
-                        Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
-                }
-            }
-            break;
-        case 2:
-            for (int y = Params.offsetTileY; y <= (maxY - Params.offsetTileY); y += Params.shiftTileY)
-            {
-                for (int x = Params.offsetTileX; x <= (maxX - Params.offsetTileX); x += Params.shiftTileX)
-                {
-                    ellipse(ImShow, Point(x, y),
-                        Size(Params.maxTileX / 2, Params.maxTileY / 2), 0.0, 0.0, 360.0,
-                        Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
-                    ellipse(ImShow2, Point(x, y),
-                        Size(Params.maxTileX / 2, Params.maxTileY / 2), 0.0, 0.0, 360.0,
-                        Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
-                }
-            }
-            break;
-        case 3:
-            for (int y = Params.offsetTileY; y <= (maxY - Params.offsetTileY); y += Params.shiftTileY)
-            {
-                for (int x = Params.offsetTileX; x <= (maxX - Params.offsetTileX); x += Params.shiftTileX)
-                {
-                    int edgeLength = Params.maxTileX;
-                    Point vertice0(x - edgeLength / 2, y - (int)((float)edgeLength * 0.8660254));
-                    Point vertice1(x + edgeLength - edgeLength / 2, y - (int)((float)edgeLength * 0.8660254));
-                    Point vertice2(x + edgeLength, y);
-                    Point vertice3(x + edgeLength - edgeLength / 2, y + (int)((float)edgeLength * 0.8660254));
-                    Point vertice4(x - edgeLength / 2, y + (int)((float)edgeLength * 0.8660254));
-                    Point vertice5(x - edgeLength, y);
 
-                    line(ImShow, vertice0, vertice1, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
-                    line(ImShow, vertice1, vertice2, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
-                    line(ImShow, vertice2, vertice3, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
-                    line(ImShow, vertice3, vertice4, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
-                    line(ImShow, vertice4, vertice5, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
-                    line(ImShow, vertice5, vertice0, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
-
-                    line(ImShow2, vertice0, vertice1, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
-                    line(ImShow2, vertice1, vertice2, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
-                    line(ImShow2, vertice2, vertice3, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
-                    line(ImShow2, vertice3, vertice4, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
-                    line(ImShow2, vertice4, vertice5, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
-                    line(ImShow2, vertice5, vertice0, Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
-                }
-            }
-            break;
-        default:
-            break;
-        }
-
-    }
     int numOfDirections = (int)Params.ParamsVect.size();
 
     for(int i = 0; i < numOfDirections; i++)
     {
-        int x  = Params.ParamsVect[i].tileX * Params.shiftTileX + Params.offsetTileX;
-        int y  = Params.ParamsVect[i].tileY * Params.shiftTileY + Params.offsetTileY;
+        int x  = Params.ParamsVect[i].tileX;
+        int y  = Params.ParamsVect[i].tileY;
         double angle = Params.ParamsVect[i].Params[featNr];
+
+        if(showShape)
+            ShowShape(ImShow, x, y, Params.tileShape, Params.tileSize, tileLineThickness);
 
         int lineOffsetX = (int)round(lineLength * sin(angle * PI / 180.0));
         int lineOffsetY = (int)round(lineLength * cos(angle * PI / 180.0));
@@ -776,9 +643,12 @@ void MainWindow::Show2Image(cv::Mat Im, cv::Mat Im2, FileParams Params, FilePara
 
     for(int i = 0; i < numOfDirections; i++)
     {
-        int x  = Params2.ParamsVect[i].tileX * Params2.shiftTileX + Params2.offsetTileX;
-        int y  = Params2.ParamsVect[i].tileY * Params2.shiftTileY + Params2.offsetTileY;
+        int x  = Params2.ParamsVect[i].tileX;
+        int y  = Params2.ParamsVect[i].tileY;
         double angle = Params2.ParamsVect[i].Params[featNr];
+
+        if(showShape)
+            ShowShape(ImShow2, x, y, Params2.tileShape, Params2.tileSize, tileLineThickness);
 
         int lineOffsetX = (int)round(lineLength * sin(angle * PI / 180.0));
         int lineOffsetY = (int)round(lineLength * cos(angle * PI / 180.0));

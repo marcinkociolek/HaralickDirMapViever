@@ -115,7 +115,7 @@ public:
 
     //float
     FileParams MainWindow::GetDirectionData(boost::filesystem::path FileToOpen);
-    DirDetectionParams MainWindow::GetDirectionData2(boost::filesystem::path FileToOpen);
+    //DirDetectionParams MainWindow::GetDirectionData2(boost::filesystem::path FileToOpen);
 
     void MainWindow::ShowImage(cv::Mat Im, FileParams Params,
                                bool sudocolor,
