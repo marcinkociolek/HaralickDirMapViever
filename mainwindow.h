@@ -52,6 +52,7 @@ public:
     bool showFirstImage;
     bool showSecondImage;
     bool showTwoImages;
+    bool showImageCombination;
     float minIm;
     float maxIm;
     float minIm2;
@@ -207,6 +208,8 @@ private slots:
     void on_spinBoxIntensityThreshold_valueChanged(int arg1);
 
     void on_spinBoxIntensityThreshold2_valueChanged(int arg1);
+
+    void on_checkBoxShowImageCombination_toggled(bool checked);
 
 private:
     Ui::MainWindow *ui;

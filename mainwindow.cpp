@@ -93,7 +93,9 @@ MainWindow::MainWindow(QWidget *parent) :
     meanIntensityTreshold2 = ui->doubleSpinBoxProcTresh2->value();
     zOffset = ui->spinBoxZOffset->value();
     zFrame = 0;
-    InputDirectory = "C:/Data/Sumona3Out/";
+    showImageCombination = ui->checkBoxShowImageCombination->checkState();
+
+    InputDirectory = "E:/ActinCalceinData/Actin/Direction/";
 
     intensityThresholdIm1 = ui->spinBoxIntensityThreshold->value();
     intensityThresholdIm2 = ui->spinBoxIntensityThreshold2->value();
@@ -320,7 +322,7 @@ FileParams  MainWindow::GetDirectionData(path FileToOpen)
             break;
         }
     }
-    LocalParams.ImFolderName = Line.substr(18);
+    LocalParams.ImFolderName = Line.substr(19);
     //path ImFileName(Line2);
 
     // read tile shape
@@ -377,9 +379,10 @@ FileParams  MainWindow::GetDirectionData(path FileToOpen)
     while(1)
     {
         stringPos = Line.find("\t",stringPos);
-        LocalParams.ValueCount++;
-        if(stringPos != string::npos)
+
+        if(stringPos == string::npos)
             break;
+        LocalParams.ValueCount++;
         stringPos++;
     }
     // read feature names
@@ -460,7 +463,7 @@ void MainWindow::ShowImage(cv::Mat Im, FileParams Params,
         int lineOffsetX = (int)round(lineLength * sin(angle * PI / 180.0));
         int lineOffsetY = (int)round(lineLength * cos(angle * PI / 180.0));
 
-        if (angle >= -600 && showLine && Params.ParamsVect[i].Params[0] >= meanIntensityTreshold )
+        if (angle >= -600 && showLine && Params.ParamsVect[i].Params[3] >= meanIntensityTreshold )
         {
             line(ImShow, Point(x - lineOffsetX, y - lineOffsetY), Point(x + lineOffsetX, y + lineOffsetY), Scalar(0, 0.0, 0.0, 0.0), imposedLineThickness);
         }
@@ -567,7 +570,7 @@ void MainWindow::ImageAnalysis(cv::Mat Im, FileParams *Params, unsigned short in
 
         }
         float percentage = float(sigCount)/float(pixCount)*100.0;
-        Params->ParamsVect[i].Params[9] = percentage;
+        Params->ParamsVect[i].Params[3] = percentage;
     }
 }
 
@@ -633,7 +636,7 @@ void MainWindow::Show2Image(cv::Mat Im, cv::Mat Im2, FileParams Params, FilePara
         int lineOffsetX = (int)round(lineLength * sin(angle * PI / 180.0));
         int lineOffsetY = (int)round(lineLength * cos(angle * PI / 180.0));
 
-        if (angle >= -600 && showLine && Params.ParamsVect[i].Params[9] >= meanIntensityTreshold )
+        if (angle >= -600 && showLine && Params.ParamsVect[i].Params[3] >= meanIntensityTreshold )
         {
             line(ImShow, Point(x - lineOffsetX, y - lineOffsetY), Point(x + lineOffsetX, y + lineOffsetY), Scalar(0, 0.0, 0.0, 0.0), imposedLineThickness);
             line(ImShow2, Point(x - lineOffsetX, y - lineOffsetY), Point(x + lineOffsetX, y + lineOffsetY), Scalar(0, 0.0, 0.0, 0.0), imposedLineThickness);
@@ -653,7 +656,7 @@ void MainWindow::Show2Image(cv::Mat Im, cv::Mat Im2, FileParams Params, FilePara
         int lineOffsetX = (int)round(lineLength * sin(angle * PI / 180.0));
         int lineOffsetY = (int)round(lineLength * cos(angle * PI / 180.0));
 
-        if (angle >= -600 && showLine && Params2.ParamsVect[i].Params[9] >= meanIntensityTreshold2 )
+        if (angle >= -600 && showLine && Params2.ParamsVect[i].Params[3] >= meanIntensityTreshold2 )
         {
             line(ImShow, Point(x - lineOffsetX, y - lineOffsetY), Point(x + lineOffsetX, y + lineOffsetY), Scalar(250.0, 0.0, 0.0, 0.0), imposedLineThickness);
             line(ImShow2, Point(x - lineOffsetX, y - lineOffsetY), Point(x + lineOffsetX, y + lineOffsetY), Scalar(250.0, 0.0, 0.0, 0.0), imposedLineThickness);
@@ -670,6 +673,77 @@ void MainWindow::Show2Image(cv::Mat Im, cv::Mat Im2, FileParams Params, FilePara
     imshow("Two images",ImOut);
 }
 //------------------------------------------------------------------------------------------------------------------------------
+Mat SchowImageCobination(cv::Mat Im1, cv::Mat Im2, float minIm1, float maxIm1, float minIm2, float maxIm2)
+//                          int tileLineThickness,
+//                          float meanIntensityTreshold, float meanIntensityTreshold2)
+
+{
+    if(Im1.empty())
+        return Mat::zeros(1,1,CV_8UC3);
+    if(Im2.empty())
+        return Mat::zeros(1,1,CV_8UC3);
+
+    int maxX = Im1.cols;
+    int maxY = Im1.rows;
+    int maxXY = maxX*maxY;
+    Mat ImShow = Mat::zeros(maxY, maxX, CV_8UC3);
+
+    float difference1 = maxIm1 - minIm1;
+    if(difference1 == 0)
+        difference1 = 1;
+    float gain1 = 255/difference1;
+    float offset1 = gain1 * minIm1;
+
+
+    float difference2 = maxIm2 - minIm2;
+    if(difference2 == 0)
+        difference2 = 1;
+    float gain2 = 255/difference2;
+    float offset2 = gain2 * minIm2;
+
+
+    float value;
+    unsigned char index;
+
+
+    unsigned short *wIm1 = (unsigned short *)Im1.data;
+    unsigned short *wIm2 = (unsigned short *)Im2.data;
+    unsigned char *wImShow = (unsigned char *)ImShow.data;
+
+    for (int i = 0; i < maxXY; i++)
+    {
+
+        *wImShow = 0;
+        wImShow++;
+
+        value = (float)(*wIm2) * gain2 - offset2;
+        if (value > 255)
+            value = 255;
+        if (value < 0)
+            value = 0;
+        index = (char)floor(value);
+
+
+        *wImShow = index;
+        wImShow++;
+
+        value = (float)(*wIm1) * gain1 - offset1;
+        if (value > 255)
+            value = 255;
+        if (value < 0)
+            value = 0;
+        index = (char)floor(value);
+
+        *wImShow = index;
+        wImShow++;
+        wIm1++;
+        wIm2++;
+    }
+    return ImShow;
+
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
 void MainWindow::ShowImages()
 {
     if(showFirstImage)
@@ -681,7 +755,8 @@ void MainWindow::ShowImages()
     if(showTwoImages)
         Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
                    tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness);
-
+    if(showImageCombination)
+        imshow("Combination",SchowImageCobination(ImIn, ImIn2, minIm, maxIm, minIm2, maxIm2));
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
@@ -738,7 +813,9 @@ void MainWindow::on_FileListWidget_currentTextChanged(const QString &currentText
     FileToOpen = InputDirectory;
     FileToOpen.append(currentText.toStdWString());
     FilePar1 = GetDirectionData(FileToOpen);
-    ImIn = imread(FilePar1.ImFileName.string().c_str(),CV_LOAD_IMAGE_ANYDEPTH);
+    path imageToOpen = FilePar1.ImFolderName;
+    imageToOpen.append(FilePar1.ImFileName.string());
+    ImIn = imread(imageToOpen.string().c_str(),CV_LOAD_IMAGE_ANYDEPTH);
     medianBlur(ImIn,ImIn,3);
     ImageAnalysis(ImIn, &FilePar1, intensityThresholdIm1);
     ShowImages();
@@ -902,7 +979,9 @@ void MainWindow::on_File2ListWidget_currentTextChanged(const QString &currentTex
     FileToOpen2 = InputDirectory2;
     FileToOpen2.append(currentText.toStdWString());
     FilePar2 = GetDirectionData(FileToOpen2);
-    ImIn2 = imread(FilePar2.ImFileName.string().c_str(),CV_LOAD_IMAGE_ANYDEPTH);
+    path imageToOpen = FilePar2.ImFolderName;
+    imageToOpen.append(FilePar2.ImFileName.string());
+    ImIn2 = imread(imageToOpen.string().c_str(),CV_LOAD_IMAGE_ANYDEPTH);
     medianBlur(ImIn2,ImIn2,3);
     ImageAnalysis(ImIn2, &FilePar2, intensityThresholdIm2);
     ShowImages();
@@ -1216,7 +1295,8 @@ void MainWindow::on_pushButtonCreateGlobalHist_clicked()
         FileParams Params = GetDirectionData(LocalFileToOpen);
 
         //int numOfDirections = Params.ParamsVect.size();
-        path ImFile = Params.ImFileName;
+        path ImFile = Params.ImFolderName;
+        ImFile.append(Params.ImFileName.string());
         string FileName = ImFile.string();
         if(!exists(ImFile))
             continue;
@@ -1296,7 +1376,8 @@ void MainWindow::on_pushButtonStackHist64k_clicked()
         FileParams Params = GetDirectionData(LocalFileToOpenA);
 
         //int numOfDirections = Params.ParamsVect.size();
-        path ImFile = Params.ImFileName;
+        path ImFile = Params.ImFolderName;
+        ImFile.append(Params.ImFileName.string());
         string FileName = ImFile.string();
 
         if(!exists(ImFile))
@@ -1368,7 +1449,8 @@ void MainWindow::on_pushButtonStackHist64k_clicked()
         FileParams Params = GetDirectionData(LocalFileToOpenC);
 
         //int numOfDirections = Params.ParamsVect.size();
-        path ImFile = Params.ImFileName;
+        path ImFile = Params.ImFolderName;
+        ImFile.append(Params.ImFileName.string());
         string FileName = ImFile.string();
 
         if(!exists(ImFile))
@@ -1458,5 +1540,11 @@ void MainWindow::on_spinBoxIntensityThreshold2_valueChanged(int arg1)
     intensityThresholdIm2 = arg1;
     ImageAnalysis(ImIn2, &FilePar2, intensityThresholdIm2);
 
+    ShowImages();
+}
+
+void MainWindow::on_checkBoxShowImageCombination_toggled(bool checked)
+{
+    showImageCombination = checked;
     ShowImages();
 }
