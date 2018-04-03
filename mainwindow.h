@@ -25,6 +25,8 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
+
+
     boost::filesystem::path FileToOpen;
     boost::filesystem::path CurrentDir;
     boost::filesystem::path InputDirectory;
@@ -33,15 +35,29 @@ public:
     boost::filesystem::path StartDir;
 
     boost::filesystem::path FileToOpen2;
+    boost::filesystem::path FileToOpenIm1;
+    boost::filesystem::path FileToOpenIm2;
+    boost::filesystem::path FileToOpenIm3;
     //    boost::filesystem::path CurrentDir2;
     boost::filesystem::path InputDirectory2;
+    boost::filesystem::path InputDirectoryIm1;
+    boost::filesystem::path InputDirectoryIm2;
+    boost::filesystem::path InputDirectoryIm3;
     //    boost::filesystem::path ImFileName2;
 
     boost::filesystem::path OutputDirectory;
 
     cv::Mat ImIn;
     cv::Mat ImIn2;
+    cv::Mat ImIn3;
     cv::Mat ImShow;
+
+    std::vector<cv::Mat> ImVect1;
+    std::vector<cv::Mat> ImVect2;
+    std::vector<cv::Mat> ImVect3;
+
+    std::vector<FileParams> FileParVect1;
+    std::vector<FileParams> FileParVect2;
 
     FileParams FilePar1;
     FileParams FilePar2;
@@ -57,10 +73,13 @@ public:
     float maxIm;
     float minIm2;
     float maxIm2;
+    float minIm3;
+    float maxIm3;
     int tileLineThickness;
     int featNr;
     float meanIntensityTreshold;
     float meanIntensityTreshold2;
+    float meanIntensityTreshold3;
     double lineLength;
     int imposedLineThickness;
 
@@ -69,6 +88,7 @@ public:
 
     unsigned short intensityThresholdIm1;
     unsigned short intensityThresholdIm2;
+    unsigned short intensityThresholdIm3;
 
     //    int maxX;
 //    int maxY;
@@ -145,6 +165,10 @@ public:
 
     void MainWindow::ShowImages();
 
+    void MainWindow::ShowFromVector(int vectPos1);
+    void MainWindow::FreeImageVectors();
+    void MainWindow::ShowXZFromVector(int yPosition);
+
 private slots:
     void on_pushButton_clicked();
 
@@ -210,6 +234,26 @@ private slots:
     void on_spinBoxIntensityThreshold2_valueChanged(int arg1);
 
     void on_checkBoxShowImageCombination_toggled(bool checked);
+
+    void on_pushButton2_2_clicked();
+
+    void on_pushButton2_3_clicked();
+
+    void on_pushButton2_4_clicked();
+
+    void on_FileIm3ListWidget_currentTextChanged(const QString &currentText);
+
+    void on_doubleSpinBoxImMin3_valueChanged(double arg1);
+
+    void on_doubleSpinBoxImMax3_valueChanged(double arg1);
+
+    void on_FileIm1ListWidget_currentTextChanged(const QString &currentText);
+
+    void on_pushButtonLoadVectors_clicked();
+
+    void on_spinBoxShowImVect1_valueChanged(int arg1);
+
+    void on_spinBoxYPlaneToShow_valueChanged(int arg1);
 
 private:
     Ui::MainWindow *ui;

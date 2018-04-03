@@ -90,6 +90,8 @@ MainWindow::MainWindow(QWidget *parent) :
     showTwoImages = ui->checkBoxShowTwoIm->checkState();
     minIm2 = ui->doubleSpinBoxImMin2->value();
     maxIm2 = ui->doubleSpinBoxImMax2->value();
+    minIm3 = ui->doubleSpinBoxImMin3->value();
+    maxIm3 = ui->doubleSpinBoxImMax3->value();
     meanIntensityTreshold2 = ui->doubleSpinBoxProcTresh2->value();
     zOffset = ui->spinBoxZOffset->value();
     zFrame = 0;
@@ -673,19 +675,24 @@ void MainWindow::Show2Image(cv::Mat Im, cv::Mat Im2, FileParams Params, FilePara
     imshow("Two images",ImOut);
 }
 //------------------------------------------------------------------------------------------------------------------------------
-Mat SchowImageCobination(cv::Mat Im1, cv::Mat Im2, float minIm1, float maxIm1, float minIm2, float maxIm2)
+Mat SchowImageCobination(cv::Mat Im1, cv::Mat Im2, cv::Mat Im3,
+                         float minIm1, float maxIm1, float minIm2, float maxIm2, float minIm3, float maxIm3)
 //                          int tileLineThickness,
 //                          float meanIntensityTreshold, float meanIntensityTreshold2)
 
 {
     if(Im1.empty())
         return Mat::zeros(1,1,CV_8UC3);
-    if(Im2.empty())
-        return Mat::zeros(1,1,CV_8UC3);
 
     int maxX = Im1.cols;
     int maxY = Im1.rows;
     int maxXY = maxX*maxY;
+
+    if(Im2.empty())
+        Im2 = Mat::zeros(maxY, maxX, CV_16U);
+    if(Im3.empty())
+        Im3 = Mat::zeros(maxY, maxX, CV_16U);;
+
     Mat ImShow = Mat::zeros(maxY, maxX, CV_8UC3);
 
     float difference1 = maxIm1 - minIm1;
@@ -694,12 +701,17 @@ Mat SchowImageCobination(cv::Mat Im1, cv::Mat Im2, float minIm1, float maxIm1, f
     float gain1 = 255/difference1;
     float offset1 = gain1 * minIm1;
 
-
     float difference2 = maxIm2 - minIm2;
     if(difference2 == 0)
         difference2 = 1;
     float gain2 = 255/difference2;
     float offset2 = gain2 * minIm2;
+
+    float difference3 = maxIm3 - minIm3;
+    if(difference3 == 0)
+        difference3 = 1;
+    float gain3 = 255/difference3;
+    float offset3 = gain3 * minIm3;
 
 
     float value;
@@ -708,12 +720,19 @@ Mat SchowImageCobination(cv::Mat Im1, cv::Mat Im2, float minIm1, float maxIm1, f
 
     unsigned short *wIm1 = (unsigned short *)Im1.data;
     unsigned short *wIm2 = (unsigned short *)Im2.data;
+    unsigned short *wIm3 = (unsigned short *)Im3.data;
     unsigned char *wImShow = (unsigned char *)ImShow.data;
 
     for (int i = 0; i < maxXY; i++)
     {
 
-        *wImShow = 0;
+        value = (float)(*wIm3) * gain3 - offset3;
+        if (value > 255)
+            value = 255;
+        if (value < 0)
+            value = 0;
+        index = (char)floor(value);
+        *wImShow = index;
         wImShow++;
 
         value = (float)(*wIm2) * gain2 - offset2;
@@ -722,8 +741,6 @@ Mat SchowImageCobination(cv::Mat Im1, cv::Mat Im2, float minIm1, float maxIm1, f
         if (value < 0)
             value = 0;
         index = (char)floor(value);
-
-
         *wImShow = index;
         wImShow++;
 
@@ -733,16 +750,181 @@ Mat SchowImageCobination(cv::Mat Im1, cv::Mat Im2, float minIm1, float maxIm1, f
         if (value < 0)
             value = 0;
         index = (char)floor(value);
-
         *wImShow = index;
         wImShow++;
         wIm1++;
         wIm2++;
+        wIm3++;
     }
     return ImShow;
 
 }
+//------------------------------------------------------------------------------------------------------------------------------
+void MainWindow::ShowFromVector(int vectPos1)
+{
+    int maxVectPos1 = ImVect1.size() - 1;
+    int maxVectPos2 = ImVect2.size() - 1;
+    int maxVectPos3 = ImVect3.size() - 1;
 
+    int localMaxX,localMaxY;
+    Mat ImTemp1, ImTemp2, ImTemp3;
+
+    if(vectPos1 <= maxVectPos1 && maxVectPos1 >= 0)
+    {
+        ImTemp1 = ImVect1[vectPos1];
+        localMaxX = ImTemp1.cols;
+        localMaxX = ImTemp1.rows;
+    }
+    else
+        return;
+
+    int vectPos2 = vectPos1;
+    int vectPos3 = vectPos1;
+
+    if(vectPos2 <= maxVectPos2 || maxVectPos2 >= 0)
+    {
+        ImTemp2 = ImVect2[vectPos2];
+    }
+    else
+        ImTemp2.release();
+
+    if(vectPos3 <= maxVectPos3 || maxVectPos2 >= 0)
+    {
+        ImTemp3 = ImVect3[vectPos3];
+    }
+    else
+        ImTemp3.release();
+
+    imshow("From Vector",SchowImageCobination(ImTemp1, ImTemp2, ImTemp3, minIm, maxIm, minIm2, maxIm2, minIm3, maxIm3));
+}
+//------------------------------------------------------------------------------------------------------------------------------
+void MainWindow::ShowXZFromVector(int yPosition)
+{
+    int maxZ = ImVect1.size();
+    if(maxZ < 1)
+        return;
+    if (ImVect1[0].empty())
+        return;
+    int maxX = ImVect1[0].cols;
+    int maxY = ImVect1[0].rows;
+    if(maxX < 1)
+        return;
+    if(yPosition >= maxY)
+        return;
+
+    float difference1 = maxIm - minIm;
+    if(difference1 == 0)
+        difference1 = 1;
+    float gain1 = 255/difference1;
+    float offset1 = gain1 * minIm;
+
+    float difference2 = maxIm2 - minIm2;
+    if(difference2 == 0)
+        difference2 = 1;
+    float gain2 = 255/difference2;
+    float offset2 = gain2 * minIm2;
+
+    float difference3 = maxIm3 - minIm3;
+    if(difference3 == 0)
+        difference3 = 1;
+    float gain3 = 255/difference3;
+    float offset3 = gain3 * minIm3;
+
+    bool vect2OK = true;
+    if(ImVect2.size() != ImVect1.size())
+        vect2OK = false;
+
+    bool vect3OK = true;
+    if(ImVect3.size() != ImVect1.size())
+        vect3OK = false;
+
+
+    unsigned short *wIm1,*wIm2,*wIm3;
+
+    Mat ImShow = Mat::zeros(maxZ, maxX, CV_8UC3);
+    unsigned char * wImShow = (unsigned char *)ImShow.data;
+    float value;
+    int index;
+    for(int z = 0 ; z < maxZ; z++)
+    {
+        wIm1 = (unsigned short *)ImVect1[z].data + yPosition * maxX;
+
+        if(vect2OK)
+            wIm2 = (unsigned short *)ImVect2[z].data + yPosition * maxX;
+        if(vect3OK)
+            wIm3 = (unsigned short *)ImVect3[z].data + yPosition * maxX;
+
+        for(int x = 0 ; x < maxX; x++)
+        {
+            if(vect3OK)
+            {
+                value = (float)(*wIm3) * gain3 - offset3;
+                if (value > 255)
+                    value = 255;
+                if (value < 0)
+                    value = 0;
+                index = (char)floor(value);
+                *wImShow = index;
+            }
+            else
+                *wImShow = 0;
+            wImShow++;
+
+            if(vect2OK)
+            {
+                value = (float)(*wIm2) * gain2 - offset2;
+                if (value > 255)
+                    value = 255;
+                if (value < 0)
+                    value = 0;
+                index = (char)floor(value);
+                *wImShow = index;
+            }
+            else
+                *wImShow = 0;
+            wImShow++;
+
+            value = (float)(*wIm1) * gain1 - offset1;
+            if (value > 255)
+                value = 255;
+            if (value < 0)
+                value = 0;
+            index = (char)floor(value);
+            *wImShow = index;
+            wImShow++;
+
+            wIm1++;
+            wIm2++;
+            wIm3++;
+        }
+    }
+
+    imshow("Z view",ImShow);
+}
+//------------------------------------------------------------------------------------------------------------------------------
+void MainWindow::FreeImageVectors()
+{
+    while(ImVect1.size() > 0)
+    {
+        ImVect1.back().release();
+
+        ImVect1.pop_back();
+    }
+    while(ImVect2.size() > 0)
+    {
+        ImVect2.back().release();
+
+        ImVect2.pop_back();
+    }
+    while(ImVect3.size() > 0)
+    {
+        ImVect3.back().release();
+
+        ImVect3.pop_back();
+    }
+
+
+}
 //------------------------------------------------------------------------------------------------------------------------------
 void MainWindow::ShowImages()
 {
@@ -756,7 +938,9 @@ void MainWindow::ShowImages()
         Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
                    tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness);
     if(showImageCombination)
-        imshow("Combination",SchowImageCobination(ImIn, ImIn2, minIm, maxIm, minIm2, maxIm2));
+        imshow("Combination",SchowImageCobination(ImIn, ImIn2, ImIn3, minIm, maxIm, minIm2, maxIm2, minIm3, maxIm3));
+
+    ShowFromVector(ui->spinBoxShowImVect1->value());
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
@@ -813,7 +997,10 @@ void MainWindow::on_FileListWidget_currentTextChanged(const QString &currentText
     FileToOpen = InputDirectory;
     FileToOpen.append(currentText.toStdWString());
     FilePar1 = GetDirectionData(FileToOpen);
-    path imageToOpen = FilePar1.ImFolderName;
+
+    ui->FileIm1ListWidget->setCurrentRow(ui->FileListWidget->currentRow());
+
+    path imageToOpen = InputDirectoryIm1;//path imageToOpen = FilePar1.ImFolderName;
     imageToOpen.append(FilePar1.ImFileName.string());
     ImIn = imread(imageToOpen.string().c_str(),CV_LOAD_IMAGE_ANYDEPTH);
     medianBlur(ImIn,ImIn,3);
@@ -979,7 +1166,9 @@ void MainWindow::on_File2ListWidget_currentTextChanged(const QString &currentTex
     FileToOpen2 = InputDirectory2;
     FileToOpen2.append(currentText.toStdWString());
     FilePar2 = GetDirectionData(FileToOpen2);
-    path imageToOpen = FilePar2.ImFolderName;
+
+    path imageToOpen = InputDirectoryIm2;//path imageToOpen = FilePar2.ImFolderName;
+
     imageToOpen.append(FilePar2.ImFileName.string());
     ImIn2 = imread(imageToOpen.string().c_str(),CV_LOAD_IMAGE_ANYDEPTH);
     medianBlur(ImIn2,ImIn2,3);
@@ -1547,4 +1736,329 @@ void MainWindow::on_checkBoxShowImageCombination_toggled(bool checked)
 {
     showImageCombination = checked;
     ShowImages();
+}
+
+void MainWindow::on_pushButton2_2_clicked()
+{
+    QFileDialog dialog(this, "Open Folder");
+    dialog.setFileMode(QFileDialog::Directory);
+    //dialog.setDirectory("C:/Data/Sumona3Out/D28/20150819_28d_SC1_A2_Calc_PermOCN_ActinDAPI_1/");
+
+    //QStringList FileList= dialog.e
+    if(dialog.exec())
+    {
+        InputDirectoryIm1 = dialog.directory().path().toStdWString();
+    }
+    else
+        return;
+    if (!exists(InputDirectoryIm1))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((InputDirectoryIm1.string()+ " not exists ").c_str());
+        msgBox.exec();
+        InputDirectoryIm1 = "d:\\";
+    }
+    if (!is_directory(InputDirectoryIm1))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((InputDirectoryIm1.string()+ " This is not a directory path ").c_str());
+        msgBox.exec();
+        InputDirectoryIm1 = "C:\\Data\\";
+    }
+    ui->DirectoryIm1LineEdit->setText(QString::fromWCharArray(InputDirectoryIm1.wstring().c_str()));
+    ui->FileIm1ListWidget->clear();
+    for (directory_entry& FileToProcess : directory_iterator(InputDirectoryIm1))
+    {
+        regex FilePattern(ui->RegexImLineEdit->text().toStdString());
+        if (!regex_match(FileToProcess.path().filename().string().c_str(), FilePattern ))
+            continue;
+
+        path PathLocal = FileToProcess.path();
+        if (!exists(PathLocal))
+        {
+            QMessageBox msgBox;
+            msgBox.setText((PathLocal.filename().string() + " File not exists" ).c_str());
+            msgBox.exec();
+            break;
+        }
+        ui->FileIm1ListWidget->addItem(PathLocal.filename().string().c_str());
+    }
+        zFrame = 0;
+}
+
+void MainWindow::on_pushButton2_3_clicked()
+{
+    QFileDialog dialog(this, "Open Folder");
+    dialog.setFileMode(QFileDialog::Directory);
+    //dialog.setDirectory("C:/Data/Sumona3Out/D28/20150819_28d_SC1_A2_Calc_PermOCN_ActinDAPI_1/");
+
+    //QStringList FileList= dialog.e
+    if(dialog.exec())
+    {
+        InputDirectoryIm2 = dialog.directory().path().toStdWString();
+    }
+    else
+        return;
+    if (!exists(InputDirectoryIm2))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((InputDirectoryIm2.string()+ " not exists ").c_str());
+        msgBox.exec();
+        InputDirectoryIm2 = "d:\\";
+    }
+    if (!is_directory(InputDirectoryIm2))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((InputDirectoryIm2.string()+ " This is not a directory path ").c_str());
+        msgBox.exec();
+        InputDirectoryIm2 = "C:\\Data\\";
+    }
+    ui->DirectoryIm2LineEdit->setText(QString::fromWCharArray(InputDirectoryIm2.wstring().c_str()));
+    ui->FileIm2ListWidget->clear();
+    for (directory_entry& FileToProcess : directory_iterator(InputDirectoryIm2))
+    {
+        regex FilePattern(ui->RegexImLineEdit->text().toStdString());
+        if (!regex_match(FileToProcess.path().filename().string().c_str(), FilePattern ))
+            continue;
+
+        path PathLocal = FileToProcess.path();
+        if (!exists(PathLocal))
+        {
+            QMessageBox msgBox;
+            msgBox.setText((PathLocal.filename().string() + " File not exists" ).c_str());
+            msgBox.exec();
+            break;
+        }
+        ui->FileIm2ListWidget->addItem(PathLocal.filename().string().c_str());
+    }
+        zFrame = 0;
+}
+
+void MainWindow::on_pushButton2_4_clicked()
+{
+    QFileDialog dialog(this, "Open Folder");
+    dialog.setFileMode(QFileDialog::Directory);
+    //dialog.setDirectory("C:/Data/Sumona3Out/D28/20150819_28d_SC1_A2_Calc_PermOCN_ActinDAPI_1/");
+
+    //QStringList FileList= dialog.e
+    if(dialog.exec())
+    {
+        InputDirectoryIm3 = dialog.directory().path().toStdWString();
+    }
+    else
+        return;
+    if (!exists(InputDirectoryIm3))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((InputDirectoryIm3.string()+ " not exists ").c_str());
+        msgBox.exec();
+        InputDirectoryIm3 = "d:\\";
+    }
+    if (!is_directory(InputDirectoryIm3))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((InputDirectoryIm3.string()+ " This is not a directory path ").c_str());
+        msgBox.exec();
+        InputDirectoryIm3 = "C:\\Data\\";
+    }
+    ui->DirectoryIm3LineEdit->setText(QString::fromWCharArray(InputDirectoryIm3.wstring().c_str()));
+    ui->FileIm3ListWidget->clear();
+    for (directory_entry& FileToProcess : directory_iterator(InputDirectoryIm3))
+    {
+        regex FilePattern(ui->RegexImLineEdit->text().toStdString());
+        if (!regex_match(FileToProcess.path().filename().string().c_str(), FilePattern ))
+            continue;
+
+        path PathLocal = FileToProcess.path();
+        if (!exists(PathLocal))
+        {
+            QMessageBox msgBox;
+            msgBox.setText((PathLocal.filename().string() + " File not exists" ).c_str());
+            msgBox.exec();
+            break;
+        }
+        ui->FileIm3ListWidget->addItem(PathLocal.filename().string().c_str());
+    }
+        zFrame = 0;
+
+}
+
+void MainWindow::on_FileIm3ListWidget_currentTextChanged(const QString &currentText)
+{
+    path imageToOpen = InputDirectoryIm3;//path imageToOpen = FilePar2.ImFolderName;
+
+    imageToOpen.append(currentText.toStdWString());
+    ImIn3 = imread(imageToOpen.string().c_str(),CV_LOAD_IMAGE_ANYDEPTH);
+    //medianBlur(ImIn2,ImIn2,3);
+    //ImageAnalysis(ImIn2, &FilePar2, intensityThresholdIm2);
+    ShowImages();
+}
+
+void MainWindow::on_doubleSpinBoxImMin3_valueChanged(double arg1)
+{
+    minIm3 = arg1;
+    ShowImages();
+}
+
+void MainWindow::on_doubleSpinBoxImMax3_valueChanged(double arg1)
+{
+    maxIm3 = arg1;
+    ShowImages();
+}
+
+void MainWindow::on_FileIm1ListWidget_currentTextChanged(const QString &currentText)
+{
+
+}
+
+void MainWindow::on_pushButtonLoadVectors_clicked()
+{
+    FreeImageVectors();
+    if (!exists(InputDirectoryIm1))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((InputDirectoryIm1.string()+ " not exists ").c_str());
+        msgBox.exec();
+        return;
+    }
+    if (!is_directory(InputDirectoryIm1))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((InputDirectoryIm1.string()+ " This is not a directory path ").c_str());
+        msgBox.exec();
+        return;
+    }
+    for (directory_entry& FileToProcess : directory_iterator(InputDirectoryIm1))
+    {
+        regex FilePattern(ui->RegexImLineEdit->text().toStdString());
+        if (!regex_match(FileToProcess.path().filename().string().c_str(), FilePattern ))
+            continue;
+
+        path PathLocal = FileToProcess.path();
+        if (!exists(PathLocal))
+        {
+            QMessageBox msgBox;
+            msgBox.setText((PathLocal.filename().string() + " File not exists" ).c_str());
+            msgBox.exec();
+            break;
+        }
+        Mat ImLocal;
+        ImLocal = imread(PathLocal.string(), CV_LOAD_IMAGE_ANYDEPTH);
+        if (!ImLocal.empty())
+            ImVect1.push_back(ImLocal);
+    }
+    int vect1Size = ImVect1.size();
+    string OutStr = "Images 1 loaded: " + to_string(vect1Size);
+    ui->textEdit->append(OutStr.c_str());
+
+
+    bool imDirectory2OK = true;
+    if (!exists(InputDirectoryIm2))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((InputDirectoryIm2.string()+ " not exists ").c_str());
+        msgBox.exec();
+        imDirectory2OK = false;
+    }
+    if (!is_directory(InputDirectoryIm2))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((InputDirectoryIm2.string()+ " This is not a directory path ").c_str());
+        msgBox.exec();
+        imDirectory2OK = false;
+    }
+    if(imDirectory2OK)
+    {
+        for (directory_entry& FileToProcess : directory_iterator(InputDirectoryIm2))
+        {
+            regex FilePattern(ui->RegexImLineEdit->text().toStdString());
+            if (!regex_match(FileToProcess.path().filename().string().c_str(), FilePattern ))
+                continue;
+
+            path PathLocal = FileToProcess.path();
+            if (!exists(PathLocal))
+            {
+                QMessageBox msgBox;
+                msgBox.setText((PathLocal.filename().string() + " File not exists" ).c_str());
+                msgBox.exec();
+                break;
+            }
+            Mat ImLocal;
+            ImLocal = imread(PathLocal.string(), CV_LOAD_IMAGE_ANYDEPTH);
+            if (!ImLocal.empty())
+                ImVect2.push_back(ImLocal);
+        }
+        int vect2Size = ImVect2.size();
+        OutStr = "Images 2 loaded: " + to_string(vect2Size);
+    }
+    else
+    {
+        OutStr = "Images 2 Directory invalid: ";
+    }
+    ui->textEdit->append(OutStr.c_str());
+
+    bool imDirectory3OK = true;
+    if (!exists(InputDirectoryIm3))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((InputDirectoryIm3.string()+ " not exists ").c_str());
+        msgBox.exec();
+        imDirectory3OK = false;
+    }
+    if (!is_directory(InputDirectoryIm3))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((InputDirectoryIm3.string()+ " This is not a directory path ").c_str());
+        msgBox.exec();
+        imDirectory3OK = false;
+    }
+    if(imDirectory3OK)
+    {
+        for (directory_entry& FileToProcess : directory_iterator(InputDirectoryIm3))
+        {
+            regex FilePattern(ui->RegexImLineEdit->text().toStdString());
+            if (!regex_match(FileToProcess.path().filename().string().c_str(), FilePattern ))
+                continue;
+
+            path PathLocal = FileToProcess.path();
+            if (!exists(PathLocal))
+            {
+                QMessageBox msgBox;
+                msgBox.setText((PathLocal.filename().string() + " File not exists" ).c_str());
+                msgBox.exec();
+                break;
+            }
+            Mat ImLocal;
+            ImLocal = imread(PathLocal.string(), CV_LOAD_IMAGE_ANYDEPTH);
+            if (!ImLocal.empty())
+                ImVect3.push_back(ImLocal);
+        }
+        int vect3Size = ImVect3.size();
+        OutStr = "Images 3 loaded: " + to_string(vect3Size);
+    }
+    else
+    {
+        OutStr = "Images 3 Directory invalid: ";
+    }
+    ui->textEdit->append(OutStr.c_str());
+
+
+    ui->spinBoxShowImVect1->setMaximum(vect1Size - 1);
+    ui->spinBoxShowImVect1->setValue(0);
+    ui->spinBoxYPlaneToShow->setMaximum(ImVect1[0].rows);
+    ui->spinBoxYPlaneToShow->setValue(ImVect1[0].rows/2);
+    ShowFromVector(0);
+    ShowXZFromVector(0);
+}
+
+
+
+void MainWindow::on_spinBoxShowImVect1_valueChanged(int arg1)
+{
+    ShowFromVector(arg1);
+}
+
+void MainWindow::on_spinBoxYPlaneToShow_valueChanged(int arg1)
+{
+    ShowXZFromVector(arg1);
 }
