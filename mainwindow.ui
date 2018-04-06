@@ -324,7 +324,7 @@
      <double>512.000000000000000</double>
     </property>
     <property name="value">
-     <double>-20000.000000000000000</double>
+     <double>0.000000000000000</double>
     </property>
    </widget>
    <widget class="QDoubleSpinBox" name="doubleSpinBoxImMax">
@@ -343,7 +343,7 @@
      <number>0</number>
     </property>
     <property name="maximum">
-     <double>65535.000000000000000</double>
+     <double>605535.000000000000000</double>
     </property>
     <property name="singleStep">
      <double>512.000000000000000</double>
@@ -374,7 +374,7 @@
      <double>1.000000000000000</double>
     </property>
     <property name="value">
-     <double>10.000000000000000</double>
+     <double>20.000000000000000</double>
     </property>
    </widget>
    <widget class="QListWidget" name="File2ListWidget">
@@ -439,7 +439,7 @@
      <number>0</number>
     </property>
     <property name="maximum">
-     <double>65535.000000000000000</double>
+     <double>605535.000000000000000</double>
     </property>
     <property name="singleStep">
      <double>512.000000000000000</double>
@@ -470,7 +470,7 @@
      <double>1.000000000000000</double>
     </property>
     <property name="value">
-     <double>10.000000000000000</double>
+     <double>20.000000000000000</double>
     </property>
    </widget>
    <widget class="QDoubleSpinBox" name="doubleSpinBoxImMin2">
@@ -498,7 +498,7 @@
      <double>512.000000000000000</double>
     </property>
     <property name="value">
-     <double>-20000.000000000000000</double>
+     <double>0.000000000000000</double>
     </property>
    </widget>
    <widget class="QCheckBox" name="checkBoxShowSecondIm">
@@ -546,7 +546,7 @@
      <string>Show two Images</string>
     </property>
     <property name="checked">
-     <bool>true</bool>
+     <bool>false</bool>
     </property>
    </widget>
    <widget class="QPushButton" name="pushButtonPlus">
@@ -659,7 +659,7 @@
      <number>65535</number>
     </property>
     <property name="value">
-     <number>800</number>
+     <number>5000</number>
     </property>
    </widget>
    <widget class="QSpinBox" name="spinBoxIntensityThreshold2">
@@ -675,7 +675,7 @@
      <number>65535</number>
     </property>
     <property name="value">
-     <number>800</number>
+     <number>5000</number>
     </property>
    </widget>
    <widget class="QCheckBox" name="checkBoxShowImageCombination">
@@ -688,7 +688,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>Show Second Image</string>
+     <string>Show channel combination</string>
     </property>
     <property name="checked">
      <bool>true</bool>
@@ -819,7 +819,7 @@
      <number>65535</number>
     </property>
     <property name="value">
-     <number>800</number>
+     <number>5000</number>
     </property>
    </widget>
    <widget class="QDoubleSpinBox" name="doubleSpinBoxImMin3">
@@ -847,7 +847,7 @@
      <double>512.000000000000000</double>
     </property>
     <property name="value">
-     <double>-20000.000000000000000</double>
+     <double>0.000000000000000</double>
     </property>
    </widget>
    <widget class="QDoubleSpinBox" name="doubleSpinBoxProcTresh3">
@@ -872,7 +872,7 @@
      <double>1.000000000000000</double>
     </property>
     <property name="value">
-     <double>10.000000000000000</double>
+     <double>20.000000000000000</double>
     </property>
    </widget>
    <widget class="QDoubleSpinBox" name="doubleSpinBoxImMax3">
@@ -891,7 +891,7 @@
      <number>0</number>
     </property>
     <property name="maximum">
-     <double>65535.000000000000000</double>
+     <double>605535.000000000000000</double>
     </property>
     <property name="singleStep">
      <double>512.000000000000000</double>
