@@ -36,16 +36,11 @@ void ShowShape(Mat ImShow, int x,int y, int tileShape, int tileSize, int tileLin
     switch (tileShape)
     {
     case 1:
-        rectangle(ImShow, Point(x - tileSize / 2, y - tileSize / 2),
-            Point(x - tileSize / 2 + tileSize, y - tileSize / 2 + tileSize / 2),
-            Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
+        ellipse(ImShow, Point(x, y),
+        Size(tileSize / 2, tileSize / 2), 0.0, 0.0, 360.0,
+        Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
         break;
     case 2:
-        ellipse(ImShow, Point(x, y),
-            Size(tileSize / 2, tileSize / 2), 0.0, 0.0, 360.0,
-            Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
-        break;
-    case 3:
 
     {
         int edgeLength = tileSize / 2;
@@ -65,6 +60,9 @@ void ShowShape(Mat ImShow, int x,int y, int tileShape, int tileSize, int tileLin
     }
         break;
     default:
+        rectangle(ImShow, Point(x - tileSize / 2, y - tileSize / 2),
+            Point(x - tileSize / 2 + tileSize, y - tileSize / 2 + tileSize / 2),
+            Scalar(0.0, 0.0, 0.0, 0.0), tileLineThickness);
         break;
     }
 }
@@ -317,30 +315,38 @@ FileParams  MainWindow::GetDirectionData(path FileToOpen)
     while (inFile1.good())
     {
         getline(inFile1, Line);
-        regex LinePattern("Input Directory 1:.+");
+        regex LinePattern("Input Directory.+");
         if (regex_match(Line.c_str(), LinePattern))
         {
             inputDirFound = 1;
             break;
         }
     }
-    LocalParams.ImFolderName = Line.substr(19);
+    if(inputDirFound)
+        LocalParams.ImFolderName = Line.substr(19);
+    else
+        return LocalParams;
     //path ImFileName(Line2);
 
     // read tile shape
+    bool tileShapeFound = 0;
     while (inFile1.good())
     {
         getline(inFile1, Line);
         regex LinePattern("Tile Shape:.+");
         if (regex_match(Line.c_str(), LinePattern))
         {
+            tileShapeFound = 1;
             break;
         }
     }
-
-    LocalParams.tileShape = stoi(Line.substr(12,1));
+    if(tileShapeFound)
+        LocalParams.tileShape = stoi(Line.substr(12,1));
+    else
+        return LocalParams;
 
     //readTileSizeX
+    bool tileSizeFound = 0;
     while (inFile1.good())
     {
         getline(inFile1, Line);
@@ -348,24 +354,36 @@ FileParams  MainWindow::GetDirectionData(path FileToOpen)
         regex LinePattern("Tile width x:.+");
         if (regex_match(Line.c_str(), LinePattern))
         {
+            tileSizeFound = 1;
             break;
         }
     }
-    LocalParams.tileSize = stoi(Line.substr(13));
+    if(tileShapeFound)
+            LocalParams.tileSize = stoi(Line.substr(13));
+    else
+        return LocalParams;
+
     // read input file name
+    bool fileNameFound = 0;
     while (inFile1.good())
     {
         getline(inFile1, Line);
 
-        regex LinePattern("FileName.+");
+        regex LinePattern("File Name.+");
         if (regex_match(Line.c_str(), LinePattern))
         {
+            fileNameFound = 1;
             break;
         }
     }
-    LocalParams.ImFileName.append(Line.substr(10));
+    if(fileNameFound)
+            LocalParams.ImFileName.append(Line.substr(11));
+    else
+        return LocalParams;
+
 
     // read size of data vector
+    bool namesLineFound = 0;
     while (inFile1.good())
     {
         getline(inFile1, Line);
@@ -373,9 +391,13 @@ FileParams  MainWindow::GetDirectionData(path FileToOpen)
         regex LinePattern("Tile Y.+");
         if (regex_match(Line.c_str(), LinePattern))
         {
+            namesLineFound = 1;
             break;
         }
     }
+    if(!namesLineFound)
+        return LocalParams;
+
     LocalParams.ValueCount = 0;
     size_t stringPos = 0;
     while(1)
@@ -2042,6 +2064,98 @@ void MainWindow::on_pushButtonLoadVectors_clicked()
     }
     ui->textEdit->append(OutStr.c_str());
 
+
+
+    bool imDirectory4OK = true;
+    if (!exists(InputDirectory))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((InputDirectory.string()+ " not exists ").c_str());
+        msgBox.exec();
+        imDirectory4OK = false;
+    }
+    if (!is_directory(InputDirectory))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((InputDirectory.string()+ " This is not a directory path ").c_str());
+        msgBox.exec();
+        imDirectory4OK = false;
+    }
+    if(imDirectory4OK)
+    {
+        for (directory_entry& FileToProcess : directory_iterator(InputDirectory))
+        {
+            regex FilePattern(ui->RegexLineEdit->text().toStdString());
+            if (!regex_match(FileToProcess.path().filename().string().c_str(), FilePattern ))
+                continue;
+
+            path PathLocal = FileToProcess.path();
+            if (!exists(PathLocal))
+            {
+                QMessageBox msgBox;
+                msgBox.setText((PathLocal.filename().string() + " File not exists" ).c_str());
+                msgBox.exec();
+                break;
+            }
+            FileParams ParamsLocal = GetDirectionData(PathLocal.string());
+
+            if (ParamsLocal.ParamsVect.size())
+                FileParVect1.push_back(ParamsLocal);
+        }
+        int vect4Size = FileParVect1.size();
+        OutStr = "Directions 1 loaded: " + to_string(vect4Size);
+    }
+    else
+    {
+        OutStr = "Directions 1 directory  invalid: ";
+    }
+    ui->textEdit->append(OutStr.c_str());
+    //
+
+    bool imDirectory5OK = true;
+    if (!exists(InputDirectory2))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((InputDirectory2.string()+ " not exists ").c_str());
+        msgBox.exec();
+        imDirectory5OK = false;
+    }
+    if (!is_directory(InputDirectory2))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((InputDirectory2.string()+ " This is not a directory path ").c_str());
+        msgBox.exec();
+        imDirectory5OK = false;
+    }
+    if(imDirectory5OK)
+    {
+        for (directory_entry& FileToProcess : directory_iterator(InputDirectory2))
+        {
+            regex FilePattern(ui->RegexLineEdit->text().toStdString());
+            if (!regex_match(FileToProcess.path().filename().string().c_str(), FilePattern ))
+                continue;
+
+            path PathLocal = FileToProcess.path();
+            if (!exists(PathLocal))
+            {
+                QMessageBox msgBox;
+                msgBox.setText((PathLocal.filename().string() + " File not exists" ).c_str());
+                msgBox.exec();
+                break;
+            }
+            FileParams ParamsLocal = GetDirectionData(PathLocal.string());
+
+            if (ParamsLocal.ParamsVect.size())
+                FileParVect2.push_back(ParamsLocal);
+        }
+        int vect5Size = FileParVect2.size();
+        OutStr = "Directions 1 loaded: " + to_string(vect5Size);
+    }
+    else
+    {
+        OutStr = "Directions 1 directory  invalid: ";
+    }
+    ui->textEdit->append(OutStr.c_str());
 
     ui->spinBoxShowImVect1->setMaximum(vect1Size - 1);
     ui->spinBoxShowImVect1->setValue(0);
