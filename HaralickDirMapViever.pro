@@ -17,13 +17,15 @@ SOURCES += main.cpp\
         ../../ProjectsLib/LibMarcin/DispLib.cpp \
         ../../ProjectsLib/LibMarcin/StringFcLib.cpp \
         ../../ProjectsLib/LibMarcin/tileparams.cpp  \
-        ../../ProjectsLib/LibMarcin/dirdetectionparams.cpp
+        ../../ProjectsLib/LibMarcin/dirdetectionparams.cpp \
+        ../../ProjectsLib/LibMarcin/displayfordirdetection.cpp
 
 HEADERS  += mainwindow.h\
          ../../ProjectsLib/LibMarcin/DispLib.h \
          ../../ProjectsLib/LibMarcin/StringFcLib.h \
          ../../ProjectsLib/LibMarcin/tileparams.h \
-         ../../ProjectsLib/LibMarcin/dirdetectionparams.h
+         ../../ProjectsLib/LibMarcin/dirdetectionparams.h \
+         ../../ProjectsLib/LibMarcin/displayfordirdetection.h
 
 FORMS    += mainwindow.ui
 

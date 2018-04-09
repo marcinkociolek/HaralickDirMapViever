@@ -90,6 +90,13 @@ public:
     unsigned short intensityThresholdIm2;
     unsigned short intensityThresholdIm3;
 
+
+    bool showVectIm1;
+    bool showVectIm2;
+    bool showVectIm3;
+    int vectSliceToShow;
+    int vectSliceOffset;
+
     //    int maxX;
 //    int maxY;
 
@@ -165,9 +172,17 @@ public:
 
     void MainWindow::ShowImages();
 
-    void MainWindow::ShowFromVector(int vectPos1);
+    //void MainWindow::ShowFromVector(int vectPos1, bool showIm1 = 1, bool showIm2 = 1, bool showIm3 = 1 );
+    void MainWindow::ShowFromVector(int vectPos1, int offset, bool showIm1, bool showIm2, bool showIm3);
     void MainWindow::FreeImageVectors();
     void MainWindow::ShowXZFromVector(int yPosition);
+
+    void MainWindow::OpenDirection1Directory();
+    void MainWindow::OpenDirection2Directory();
+    void MainWindow::OpenImage1Directory();
+    void MainWindow::OpenImage2Directory();
+    void MainWindow::OpenImage3Directory();
+
 
 private slots:
     void on_pushButton_clicked();
@@ -254,6 +269,16 @@ private slots:
     void on_spinBoxShowImVect1_valueChanged(int arg1);
 
     void on_spinBoxYPlaneToShow_valueChanged(int arg1);
+
+    void on_checkBoxShowVectIm1_toggled(bool checked);
+
+    void on_checkBoxShowVectIm2_toggled(bool checked);
+
+    void on_checkBoxShowVectIm3_toggled(bool checked);
+
+    void on_spinBoxImOffsetVect_valueChanged(int arg1);
+
+    void on_pushButton_2_clicked();
 
 private:
     Ui::MainWindow *ui;

@@ -93,7 +93,11 @@ MainWindow::MainWindow(QWidget *parent) :
     meanIntensityTreshold2 = ui->doubleSpinBoxProcTresh2->value();
     zOffset = ui->spinBoxZOffset->value();
     zFrame = 0;
+    showVectIm1 = ui->checkBoxShowVectIm1->checkState();
+    showVectIm2 = ui->checkBoxShowVectIm2->checkState();
+    showVectIm3 = ui->checkBoxShowVectIm3->checkState();
     showImageCombination = ui->checkBoxShowImageCombination->checkState();
+    vectSliceOffset = ui->spinBoxImOffsetVect->value();
 
     InputDirectory = "E:/ActinCalceinData/Actin/Direction/";
 
@@ -698,7 +702,10 @@ void MainWindow::Show2Image(cv::Mat Im, cv::Mat Im2, FileParams Params, FilePara
 }
 //------------------------------------------------------------------------------------------------------------------------------
 Mat SchowImageCobination(cv::Mat Im1, cv::Mat Im2, cv::Mat Im3,
-                         float minIm1, float maxIm1, float minIm2, float maxIm2, float minIm3, float maxIm3)
+                         float minIm1, float maxIm1,
+                         float minIm2, float maxIm2,
+                         float minIm3, float maxIm3,
+                         bool showIm1, bool showIm2, bool showIm3)
 //                          int tileLineThickness,
 //                          float meanIntensityTreshold, float meanIntensityTreshold2)
 
@@ -754,7 +761,10 @@ Mat SchowImageCobination(cv::Mat Im1, cv::Mat Im2, cv::Mat Im3,
         if (value < 0)
             value = 0;
         index = (char)floor(value);
-        *wImShow = index;
+        if(showIm3)
+            *wImShow = index;
+        else
+            *wImShow = 0;
         wImShow++;
 
         value = (float)(*wIm2) * gain2 - offset2;
@@ -763,7 +773,10 @@ Mat SchowImageCobination(cv::Mat Im1, cv::Mat Im2, cv::Mat Im3,
         if (value < 0)
             value = 0;
         index = (char)floor(value);
-        *wImShow = index;
+        if(showIm2)
+            *wImShow = index;
+        else
+            *wImShow = 0;
         wImShow++;
 
         value = (float)(*wIm1) * gain1 - offset1;
@@ -772,7 +785,10 @@ Mat SchowImageCobination(cv::Mat Im1, cv::Mat Im2, cv::Mat Im3,
         if (value < 0)
             value = 0;
         index = (char)floor(value);
-        *wImShow = index;
+        if(showIm1)
+            *wImShow = index;
+        else
+            *wImShow = 0;
         wImShow++;
         wIm1++;
         wIm2++;
@@ -782,7 +798,7 @@ Mat SchowImageCobination(cv::Mat Im1, cv::Mat Im2, cv::Mat Im3,
 
 }
 //------------------------------------------------------------------------------------------------------------------------------
-void MainWindow::ShowFromVector(int vectPos1)
+void MainWindow::ShowFromVector(int vectPos1, int offset, bool showIm1, bool showIm2, bool showIm3)
 {
     int maxVectPos1 = ImVect1.size() - 1;
     int maxVectPos2 = ImVect2.size() - 1;
@@ -800,7 +816,7 @@ void MainWindow::ShowFromVector(int vectPos1)
     else
         return;
 
-    int vectPos2 = vectPos1;
+    int vectPos2 = vectPos1 + offset;
     int vectPos3 = vectPos1;
 
     if(vectPos2 <= maxVectPos2 || maxVectPos2 >= 0)
@@ -817,7 +833,9 @@ void MainWindow::ShowFromVector(int vectPos1)
     else
         ImTemp3.release();
 
-    imshow("From Vector",SchowImageCobination(ImTemp1, ImTemp2, ImTemp3, minIm, maxIm, minIm2, maxIm2, minIm3, maxIm3));
+    imshow("From Vector",SchowImageCobination(ImTemp1, ImTemp2, ImTemp3,
+                                              minIm, maxIm, minIm2, maxIm2, minIm3, maxIm3,
+                                              showIm1,showIm2,showIm3));
 }
 //------------------------------------------------------------------------------------------------------------------------------
 void MainWindow::ShowXZFromVector(int yPosition)
@@ -833,6 +851,8 @@ void MainWindow::ShowXZFromVector(int yPosition)
         return;
     if(yPosition >= maxY)
         return;
+
+
 
     float difference1 = maxIm - minIm;
     if(difference1 == 0)
@@ -944,7 +964,18 @@ void MainWindow::FreeImageVectors()
 
         ImVect3.pop_back();
     }
+    while(FileParVect1.size() > 0)
+    {
+        FileParVect1.back().ParamsVect.clear();
 
+        FileParVect1.pop_back();
+    }
+    while(FileParVect2.size() > 0)
+    {
+        FileParVect2.back().ParamsVect.clear();
+
+        FileParVect2.pop_back();
+    }
 
 }
 //------------------------------------------------------------------------------------------------------------------------------
@@ -960,25 +991,13 @@ void MainWindow::ShowImages()
         Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
                    tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness);
     if(showImageCombination)
-        imshow("Combination",SchowImageCobination(ImIn, ImIn2, ImIn3, minIm, maxIm, minIm2, maxIm2, minIm3, maxIm3));
+        imshow("Combination",SchowImageCobination(ImIn, ImIn2, ImIn3, minIm, maxIm, minIm2, maxIm2, minIm3, maxIm3, showVectIm1, showVectIm2, showVectIm3));
 
-    ShowFromVector(ui->spinBoxShowImVect1->value());
+    ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3);
 }
-
 //------------------------------------------------------------------------------------------------------------------------------
-void MainWindow::on_pushButton_clicked()
+void MainWindow::OpenDirection1Directory()
 {
-    QFileDialog dialog(this, "Open Folder");
-    dialog.setFileMode(QFileDialog::Directory);
-    dialog.setDirectory(InputDirectory.string().c_str());
-
-    //QStringList FileList= dialog.e
-    if(dialog.exec())
-    {
-        InputDirectory = dialog.directory().path().toStdWString();
-    }
-    else
-        return;
     if (!exists(InputDirectory))
     {
         QMessageBox msgBox;
@@ -1012,6 +1031,173 @@ void MainWindow::on_pushButton_clicked()
         ui->FileListWidget->addItem(PathLocal.filename().string().c_str());
     }
         zFrame = 0;
+}
+//------------------------------------------------------------------------------------------------------------------------------
+void MainWindow::OpenDirection2Directory()
+{
+    if (!exists(InputDirectory2))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((InputDirectory2.string()+ " not exists ").c_str());
+        msgBox.exec();
+        InputDirectory2 = "d:\\";
+    }
+    if (!is_directory(InputDirectory))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((InputDirectory2.string()+ " This is not a directory path ").c_str());
+        msgBox.exec();
+        InputDirectory2 = "C:\\Data\\";
+    }
+    ui->Directory2LineEdit->setText(QString::fromWCharArray(InputDirectory2.wstring().c_str()));
+    ui->File2ListWidget->clear();
+    for (directory_entry& FileToProcess : directory_iterator(InputDirectory2))
+    {
+        regex FilePattern(ui->RegexLineEdit->text().toStdString());
+        if (!regex_match(FileToProcess.path().filename().string().c_str(), FilePattern ))
+            continue;
+
+        path PathLocal = FileToProcess.path();
+        if (!exists(PathLocal))
+        {
+            QMessageBox msgBox;
+            msgBox.setText((PathLocal.filename().string() + " File not exists" ).c_str());
+            msgBox.exec();
+            break;
+        }
+        ui->File2ListWidget->addItem(PathLocal.filename().string().c_str());
+    }
+    zFrame = 0;
+}
+//------------------------------------------------------------------------------------------------------------------------------
+void MainWindow::OpenImage1Directory()
+{
+    if (!exists(InputDirectoryIm1))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((InputDirectoryIm1.string()+ " not exists ").c_str());
+        msgBox.exec();
+        InputDirectoryIm1 = "d:\\";
+    }
+    if (!is_directory(InputDirectoryIm1))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((InputDirectoryIm1.string()+ " This is not a directory path ").c_str());
+        msgBox.exec();
+        InputDirectoryIm1 = "C:\\Data\\";
+    }
+    ui->DirectoryIm1LineEdit->setText(QString::fromWCharArray(InputDirectoryIm1.wstring().c_str()));
+    ui->FileIm1ListWidget->clear();
+    for (directory_entry& FileToProcess : directory_iterator(InputDirectoryIm1))
+    {
+        regex FilePattern(ui->RegexImLineEdit->text().toStdString());
+        if (!regex_match(FileToProcess.path().filename().string().c_str(), FilePattern ))
+            continue;
+
+        path PathLocal = FileToProcess.path();
+        if (!exists(PathLocal))
+        {
+            QMessageBox msgBox;
+            msgBox.setText((PathLocal.filename().string() + " File not exists" ).c_str());
+            msgBox.exec();
+            break;
+        }
+        ui->FileIm1ListWidget->addItem(PathLocal.filename().string().c_str());
+    }
+        zFrame = 0;
+}
+//------------------------------------------------------------------------------------------------------------------------------
+void MainWindow::OpenImage2Directory()
+{
+    if (!exists(InputDirectoryIm2))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((InputDirectoryIm2.string()+ " not exists ").c_str());
+        msgBox.exec();
+        InputDirectoryIm2 = "d:\\";
+    }
+    if (!is_directory(InputDirectoryIm2))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((InputDirectoryIm2.string()+ " This is not a directory path ").c_str());
+        msgBox.exec();
+        InputDirectoryIm2 = "C:\\Data\\";
+    }
+    ui->DirectoryIm2LineEdit->setText(QString::fromWCharArray(InputDirectoryIm2.wstring().c_str()));
+    ui->FileIm2ListWidget->clear();
+    for (directory_entry& FileToProcess : directory_iterator(InputDirectoryIm2))
+    {
+        regex FilePattern(ui->RegexImLineEdit->text().toStdString());
+        if (!regex_match(FileToProcess.path().filename().string().c_str(), FilePattern ))
+            continue;
+
+        path PathLocal = FileToProcess.path();
+        if (!exists(PathLocal))
+        {
+            QMessageBox msgBox;
+            msgBox.setText((PathLocal.filename().string() + " File not exists" ).c_str());
+            msgBox.exec();
+            break;
+        }
+        ui->FileIm2ListWidget->addItem(PathLocal.filename().string().c_str());
+    }
+    zFrame = 0;
+}
+//------------------------------------------------------------------------------------------------------------------------------
+void MainWindow::OpenImage3Directory()
+{
+    if (!exists(InputDirectoryIm3))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((InputDirectoryIm3.string()+ " not exists ").c_str());
+        msgBox.exec();
+        InputDirectoryIm3 = "d:\\";
+    }
+    if (!is_directory(InputDirectoryIm3))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((InputDirectoryIm3.string()+ " This is not a directory path ").c_str());
+        msgBox.exec();
+        InputDirectoryIm3 = "C:\\Data\\";
+    }
+    ui->DirectoryIm3LineEdit->setText(QString::fromWCharArray(InputDirectoryIm3.wstring().c_str()));
+    ui->FileIm3ListWidget->clear();
+    for (directory_entry& FileToProcess : directory_iterator(InputDirectoryIm3))
+    {
+        regex FilePattern(ui->RegexImLineEdit->text().toStdString());
+        if (!regex_match(FileToProcess.path().filename().string().c_str(), FilePattern ))
+            continue;
+
+        path PathLocal = FileToProcess.path();
+        if (!exists(PathLocal))
+        {
+            QMessageBox msgBox;
+            msgBox.setText((PathLocal.filename().string() + " File not exists" ).c_str());
+            msgBox.exec();
+            break;
+        }
+        ui->FileIm3ListWidget->addItem(PathLocal.filename().string().c_str());
+    }
+        zFrame = 0;
+
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
+void MainWindow::on_pushButton_clicked()
+{
+    QFileDialog dialog(this, "Open Folder");
+    dialog.setFileMode(QFileDialog::Directory);
+    dialog.setDirectory(InputDirectory.string().c_str());
+
+    //QStringList FileList= dialog.e
+    if(dialog.exec())
+    {
+        InputDirectory = dialog.directory().path().toStdWString();
+    }
+    else
+        return;
+
+    OpenDirection1Directory();
 }
 
 void MainWindow::on_FileListWidget_currentTextChanged(const QString &currentText)
@@ -1148,39 +1334,8 @@ void MainWindow::on_pushButton2_clicked()
     }
     else
         return;
-    if (!exists(InputDirectory2))
-    {
-        QMessageBox msgBox;
-        msgBox.setText((InputDirectory2.string()+ " not exists ").c_str());
-        msgBox.exec();
-        InputDirectory2 = "d:\\";
-    }
-    if (!is_directory(InputDirectory))
-    {
-        QMessageBox msgBox;
-        msgBox.setText((InputDirectory2.string()+ " This is not a directory path ").c_str());
-        msgBox.exec();
-        InputDirectory2 = "C:\\Data\\";
-    }
-    ui->Directory2LineEdit->setText(QString::fromWCharArray(InputDirectory2.wstring().c_str()));
-    ui->File2ListWidget->clear();
-    for (directory_entry& FileToProcess : directory_iterator(InputDirectory2))
-    {
-        regex FilePattern(ui->RegexLineEdit->text().toStdString());
-        if (!regex_match(FileToProcess.path().filename().string().c_str(), FilePattern ))
-            continue;
+    OpenDirection2Directory();
 
-        path PathLocal = FileToProcess.path();
-        if (!exists(PathLocal))
-        {
-            QMessageBox msgBox;
-            msgBox.setText((PathLocal.filename().string() + " File not exists" ).c_str());
-            msgBox.exec();
-            break;
-        }
-        ui->File2ListWidget->addItem(PathLocal.filename().string().c_str());
-    }
-        zFrame = 0;
 }
 
 void MainWindow::on_File2ListWidget_currentTextChanged(const QString &currentText)
@@ -1773,39 +1928,8 @@ void MainWindow::on_pushButton2_2_clicked()
     }
     else
         return;
-    if (!exists(InputDirectoryIm1))
-    {
-        QMessageBox msgBox;
-        msgBox.setText((InputDirectoryIm1.string()+ " not exists ").c_str());
-        msgBox.exec();
-        InputDirectoryIm1 = "d:\\";
-    }
-    if (!is_directory(InputDirectoryIm1))
-    {
-        QMessageBox msgBox;
-        msgBox.setText((InputDirectoryIm1.string()+ " This is not a directory path ").c_str());
-        msgBox.exec();
-        InputDirectoryIm1 = "C:\\Data\\";
-    }
-    ui->DirectoryIm1LineEdit->setText(QString::fromWCharArray(InputDirectoryIm1.wstring().c_str()));
-    ui->FileIm1ListWidget->clear();
-    for (directory_entry& FileToProcess : directory_iterator(InputDirectoryIm1))
-    {
-        regex FilePattern(ui->RegexImLineEdit->text().toStdString());
-        if (!regex_match(FileToProcess.path().filename().string().c_str(), FilePattern ))
-            continue;
+    OpenImage1Directory();
 
-        path PathLocal = FileToProcess.path();
-        if (!exists(PathLocal))
-        {
-            QMessageBox msgBox;
-            msgBox.setText((PathLocal.filename().string() + " File not exists" ).c_str());
-            msgBox.exec();
-            break;
-        }
-        ui->FileIm1ListWidget->addItem(PathLocal.filename().string().c_str());
-    }
-        zFrame = 0;
 }
 
 void MainWindow::on_pushButton2_3_clicked()
@@ -1821,39 +1945,8 @@ void MainWindow::on_pushButton2_3_clicked()
     }
     else
         return;
-    if (!exists(InputDirectoryIm2))
-    {
-        QMessageBox msgBox;
-        msgBox.setText((InputDirectoryIm2.string()+ " not exists ").c_str());
-        msgBox.exec();
-        InputDirectoryIm2 = "d:\\";
-    }
-    if (!is_directory(InputDirectoryIm2))
-    {
-        QMessageBox msgBox;
-        msgBox.setText((InputDirectoryIm2.string()+ " This is not a directory path ").c_str());
-        msgBox.exec();
-        InputDirectoryIm2 = "C:\\Data\\";
-    }
-    ui->DirectoryIm2LineEdit->setText(QString::fromWCharArray(InputDirectoryIm2.wstring().c_str()));
-    ui->FileIm2ListWidget->clear();
-    for (directory_entry& FileToProcess : directory_iterator(InputDirectoryIm2))
-    {
-        regex FilePattern(ui->RegexImLineEdit->text().toStdString());
-        if (!regex_match(FileToProcess.path().filename().string().c_str(), FilePattern ))
-            continue;
 
-        path PathLocal = FileToProcess.path();
-        if (!exists(PathLocal))
-        {
-            QMessageBox msgBox;
-            msgBox.setText((PathLocal.filename().string() + " File not exists" ).c_str());
-            msgBox.exec();
-            break;
-        }
-        ui->FileIm2ListWidget->addItem(PathLocal.filename().string().c_str());
-    }
-        zFrame = 0;
+    OpenImage2Directory();
 }
 
 void MainWindow::on_pushButton2_4_clicked()
@@ -1869,40 +1962,8 @@ void MainWindow::on_pushButton2_4_clicked()
     }
     else
         return;
-    if (!exists(InputDirectoryIm3))
-    {
-        QMessageBox msgBox;
-        msgBox.setText((InputDirectoryIm3.string()+ " not exists ").c_str());
-        msgBox.exec();
-        InputDirectoryIm3 = "d:\\";
-    }
-    if (!is_directory(InputDirectoryIm3))
-    {
-        QMessageBox msgBox;
-        msgBox.setText((InputDirectoryIm3.string()+ " This is not a directory path ").c_str());
-        msgBox.exec();
-        InputDirectoryIm3 = "C:\\Data\\";
-    }
-    ui->DirectoryIm3LineEdit->setText(QString::fromWCharArray(InputDirectoryIm3.wstring().c_str()));
-    ui->FileIm3ListWidget->clear();
-    for (directory_entry& FileToProcess : directory_iterator(InputDirectoryIm3))
-    {
-        regex FilePattern(ui->RegexImLineEdit->text().toStdString());
-        if (!regex_match(FileToProcess.path().filename().string().c_str(), FilePattern ))
-            continue;
 
-        path PathLocal = FileToProcess.path();
-        if (!exists(PathLocal))
-        {
-            QMessageBox msgBox;
-            msgBox.setText((PathLocal.filename().string() + " File not exists" ).c_str());
-            msgBox.exec();
-            break;
-        }
-        ui->FileIm3ListWidget->addItem(PathLocal.filename().string().c_str());
-    }
-        zFrame = 0;
-
+    OpenImage3Directory();
 }
 
 void MainWindow::on_FileIm3ListWidget_currentTextChanged(const QString &currentText)
@@ -2161,7 +2222,8 @@ void MainWindow::on_pushButtonLoadVectors_clicked()
     ui->spinBoxShowImVect1->setValue(0);
     ui->spinBoxYPlaneToShow->setMaximum(ImVect1[0].rows);
     ui->spinBoxYPlaneToShow->setValue(ImVect1[0].rows/2);
-    ShowFromVector(0);
+    vectSliceToShow = 0;
+    ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3);
     ShowXZFromVector(0);
 }
 
@@ -2169,10 +2231,68 @@ void MainWindow::on_pushButtonLoadVectors_clicked()
 
 void MainWindow::on_spinBoxShowImVect1_valueChanged(int arg1)
 {
-    ShowFromVector(arg1);
+    vectSliceToShow = arg1;
+    ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3);
 }
 
 void MainWindow::on_spinBoxYPlaneToShow_valueChanged(int arg1)
 {
     ShowXZFromVector(arg1);
+}
+
+void MainWindow::on_checkBoxShowVectIm1_toggled(bool checked)
+{
+    showVectIm1 = checked;
+    ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3);
+}
+
+void MainWindow::on_checkBoxShowVectIm2_toggled(bool checked)
+{
+    showVectIm2 = checked;
+    ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3);
+}
+
+void MainWindow::on_checkBoxShowVectIm3_toggled(bool checked)
+{
+    showVectIm3 = checked;
+    ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3);
+}
+
+void MainWindow::on_spinBoxImOffsetVect_valueChanged(int arg1)
+{
+    vectSliceOffset = arg1;
+    ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3);
+}
+
+void MainWindow::on_pushButton_2_clicked()
+{
+    path LocalDirectory;
+    QFileDialog dialog(this, "Open Folder");
+    dialog.setFileMode(QFileDialog::Directory);
+    dialog.setDirectory(InputDirectory.string().c_str());
+
+    //QStringList FileList= dialog.e
+    if(dialog.exec())
+    {
+        LocalDirectory = dialog.directory().path().toStdWString();
+    }
+    else
+        return;
+
+    InputDirectory = LocalDirectory;
+    InputDirectory.append("/Actin/Direction/");
+    InputDirectory2 = LocalDirectory;
+    InputDirectory2.append("/Calcein/Direction/");
+    InputDirectoryIm1 = LocalDirectory;
+    InputDirectoryIm1.append("/Actin/");
+    InputDirectoryIm2 = LocalDirectory;
+    InputDirectoryIm2.append("/Calcein/");
+    InputDirectoryIm3 = LocalDirectory;
+    InputDirectoryIm3.append("/Nucleus/");
+
+    OpenDirection1Directory();
+    OpenDirection2Directory();
+    OpenImage1Directory();
+    OpenImage2Directory();
+    OpenImage3Directory();
 }
