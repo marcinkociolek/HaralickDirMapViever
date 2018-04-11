@@ -1211,6 +1211,10 @@ void MainWindow::on_FileListWidget_currentTextChanged(const QString &currentText
     path imageToOpen = InputDirectoryIm1;//path imageToOpen = FilePar1.ImFolderName;
     imageToOpen.append(FilePar1.ImFileName.string());
     ImIn = imread(imageToOpen.string().c_str(),CV_LOAD_IMAGE_ANYDEPTH);
+    if(ImIn.type() != CV_16U)
+    {
+        ImIn.convertTo(ImIn,CV_16U);
+    }
     medianBlur(ImIn,ImIn,3);
     ImageAnalysis(ImIn, &FilePar1, intensityThresholdIm1);
     ShowImages();
@@ -1348,6 +1352,10 @@ void MainWindow::on_File2ListWidget_currentTextChanged(const QString &currentTex
 
     imageToOpen.append(FilePar2.ImFileName.string());
     ImIn2 = imread(imageToOpen.string().c_str(),CV_LOAD_IMAGE_ANYDEPTH);
+    if(ImIn.type() != CV_16U)
+    {
+        ImIn.convertTo(ImIn,CV_16U);
+    }
     medianBlur(ImIn2,ImIn2,3);
     ImageAnalysis(ImIn2, &FilePar2, intensityThresholdIm2);
     ShowImages();
@@ -1462,49 +1470,73 @@ void MainWindow::on_pushButtonMinus_clicked()
 
 void MainWindow::on_pushButtonCreateOut_clicked()
 {
+    int zCount = ImVect1.size();
+    if(!zCount)
+        return;
+    if(ImVect2.size() =! rowCount)
+        return;
+    if(FileParVect1.size() =! rowCount)
+        return;
+    if(FileParVect2.size() =! rowCount)
+        return;
+
+    int zOffsetMin = -10;
+    int zOffsetMax = 10;
+    int zOffcetCount = zOffsetMax - zOffsetMin + 1;
+
+    int *zOffsetValue = new int[zOffcetCount];
+    int *ActinTiles = new int[zOffcetCount];
+    int *CalceinTiles = new int[zOffcetCount];
+    int *CoexistingTiles = new int[zOffcetCount];
+
+    /*
+        zOffsetValue
+        ActinTiles
+        CalceinTiles
+        CoexistingTiles
+     */
+
+    for(int i = 0; i < zOffcetCount; i++)
+    {
+        zOffsetValue[i] = 0;
+        ActinTiles[i] = 0;
+        CalceinTiles[i] = 0;
+        CoexistingTiles[i] = 0;
+    }
+
     for(int zOffset = -10;zOffset <=10; zOffset++)
     {
-        string StrOut = "Actin File Name\tCalcein File Name\t z Plane\ttile Y\ttile X\tdir Actin\tdir Calcein\tmean intensity Actin\tmean intensity Calcein\tAbs dir difference\n";
+        zOffsetValue[i] = zOffset;
+        //string StrOut = "Actin File Name\tCalcein File Name\t z Plane\ttile Y\ttile X\tdir Actin\tdir Calcein\tmean intensity Actin\tmean intensity Calcein\tAbs dir difference\n";
 
-        int start1;
-        int stop1;
-        int rowCount = ui->FileListWidget->count();
+        int zStart = 0;
+        int zStop = imCount;
 
-        start1 = 0;
-        if((start1 + zOffset)< 0)
-            start1 = 0 - zOffset;
+        if((zStart + zOffset)< 0)
+            zStart = 0 - zOffset;
 
-        stop1 = rowCount;
-        if((stop1 + zOffset)>= rowCount)
-            stop1 = rowCount - zOffset;
+        if((zStop + zOffset)>= zCount)
+            zStop = zCount - zOffset;
 
-
-
-
-        for(int k = start1; k < stop1 ;k++)
+        for(int z = zStart; z < zStop ;z++)
         {
-            path LocalFileToOpen;
+            Mat LocalIm1;
+            ImVect1[z].copyTo(LocalIm1);
+            FileParams Params1 = FileParVect1[z];
+            medianBlur(LocalIm1,LocalIm1,3);
+            ImageAnalysis(LocalIm1, &Params1, intensityThresholdIm1);
 
-            LocalFileToOpen  = InputDirectory;
-            LocalFileToOpen.append(ui->FileListWidget->item(k)->text().toStdWString());
-            FileParams Params1 = GetDirectionData(LocalFileToOpen);
-            ImIn = imread(Params1.ImFileName.string().c_str(),CV_LOAD_IMAGE_ANYDEPTH);
-            medianBlur(ImIn,ImIn,3);
-            ImageAnalysis(ImIn, &Params1, intensityThresholdIm1);
+            Mat LocalIm2;
+            ImVect2[z + zOffset].copyTo(LocalIm2);
+            FileParams Params2 = FileParVect2[z + zOffset];
+            medianBlur(LocalIm2,LocalIm2,3);
+            ImageAnalysis(LocalIm2, &Params2, intensityThresholdIm2);
 
-
-            LocalFileToOpen  = InputDirectory2;
-            LocalFileToOpen.append(ui->File2ListWidget->item(k+zOffset)->text().toStdWString());
-            FileParams Params2 = GetDirectionData(LocalFileToOpen);
-            ImIn = imread(Params2.ImFileName.string().c_str(),CV_LOAD_IMAGE_ANYDEPTH);
-            medianBlur(ImIn,ImIn,3);
-            ImageAnalysis(ImIn, &Params2, intensityThresholdIm1);
-
-            int numOfDirections = Params1.ParamsVect.size();
-            for(int i = 0; i < numOfDirections; i++)
+            int numOfTiles = Params1.ParamsVect.size();
+            for(int t = 0; t < numOfTiles; t++)
             {
-                int x  = Params1.ParamsVect[i].tileX;
-                int y  = Params1.ParamsVect[i].tileY;
+                int x  = Params1.ParamsVect[t].tileX;
+                int y  = Params1.ParamsVect[t].tileY;
 
                 float angle1 = Params1.ParamsVect[i].Params[featNr];
                 float angle2 = Params2.ParamsVect[i].Params[featNr];
@@ -1534,6 +1566,8 @@ void MainWindow::on_pushButtonCreateOut_clicked()
                     StrOut += to_string(diff) + "\n";
                 }
             }
+            LocalIm1.release();
+            LocalIm1.release();
 
 
         }
@@ -1546,6 +1580,10 @@ void MainWindow::on_pushButtonCreateOut_clicked()
         StrOut.empty();
     }
 
+    delete[] zOffsetValue;
+    delete[] ActinTiles;
+    delete[] CalceinTiles;
+    delete[] CoexistingTiles;
 
 }
 
@@ -1667,6 +1705,10 @@ void MainWindow::on_pushButtonCreateGlobalHist_clicked()
         if(!exists(ImFile))
             continue;
         Mat ImLocal = imread(FileName,CV_LOAD_IMAGE_ANYDEPTH);
+        if(ImIn.type() != CV_16U)
+        {
+            ImIn.convertTo(ImIn,CV_16U);
+        }
 
         int maxX = ImLocal.cols;
         int maxY = ImLocal.rows;
@@ -1749,7 +1791,11 @@ void MainWindow::on_pushButtonStackHist64k_clicked()
         if(!exists(ImFile))
             continue;
         Mat ImLocal = imread(FileName,CV_LOAD_IMAGE_ANYDEPTH);
-        ImLocal.convertTo(ImLocal,CV_16U);
+        if(ImIn.type() != CV_16U)
+        {
+            ImIn.convertTo(ImIn,CV_16U);
+        }
+        //ImLocal.convertTo(ImLocal,CV_16U);
         if(ImLocal.empty())
             continue;
 
@@ -1822,7 +1868,11 @@ void MainWindow::on_pushButtonStackHist64k_clicked()
         if(!exists(ImFile))
             continue;
         Mat ImLocal = imread(FileName,CV_LOAD_IMAGE_ANYDEPTH);
-        ImLocal.convertTo(ImLocal,CV_16U);
+        if(ImIn.type() != CV_16U)
+        {
+            ImIn.convertTo(ImIn,CV_16U);
+        }
+        //ImLocal.convertTo(ImLocal,CV_16U);
         if(ImLocal.empty())
             continue;
 
@@ -1972,6 +2022,10 @@ void MainWindow::on_FileIm3ListWidget_currentTextChanged(const QString &currentT
 
     imageToOpen.append(currentText.toStdWString());
     ImIn3 = imread(imageToOpen.string().c_str(),CV_LOAD_IMAGE_ANYDEPTH);
+    if(ImIn.type() != CV_16U)
+    {
+        ImIn.convertTo(ImIn,CV_16U);
+    }
     //medianBlur(ImIn2,ImIn2,3);
     //ImageAnalysis(ImIn2, &FilePar2, intensityThresholdIm2);
     ShowImages();
@@ -2027,6 +2081,10 @@ void MainWindow::on_pushButtonLoadVectors_clicked()
         }
         Mat ImLocal;
         ImLocal = imread(PathLocal.string(), CV_LOAD_IMAGE_ANYDEPTH);
+        if(ImIn.type() != CV_16U)
+        {
+            ImIn.convertTo(ImIn,CV_16U);
+        }
         if (!ImLocal.empty())
             ImVect1.push_back(ImLocal);
     }
@@ -2068,6 +2126,10 @@ void MainWindow::on_pushButtonLoadVectors_clicked()
             }
             Mat ImLocal;
             ImLocal = imread(PathLocal.string(), CV_LOAD_IMAGE_ANYDEPTH);
+            if(ImIn.type() != CV_16U)
+            {
+                ImIn.convertTo(ImIn,CV_16U);
+            }
             if (!ImLocal.empty())
                 ImVect2.push_back(ImLocal);
         }
@@ -2113,6 +2175,10 @@ void MainWindow::on_pushButtonLoadVectors_clicked()
             }
             Mat ImLocal;
             ImLocal = imread(PathLocal.string(), CV_LOAD_IMAGE_ANYDEPTH);
+            if(ImIn.type() != CV_16U)
+            {
+                ImIn.convertTo(ImIn,CV_16U);
+            }
             if (!ImLocal.empty())
                 ImVect3.push_back(ImLocal);
         }
