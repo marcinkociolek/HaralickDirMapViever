@@ -30,6 +30,21 @@ using namespace std;
 using namespace boost::filesystem;
 using namespace cv;
 
+int FindResultingDirection(int *DirectionHistogram)
+{
+    double longestResulting
+    for(int startDir = 0; startDir<180; startDir++)
+    {
+        int stopDir = startDir + 180;
+
+        for(int dir = startDir; dir < stopDir; dir++)
+        {
+            sin((double)dir)
+        }
+    }
+}
+
+
 //----------------------------------------------------------------------------------
 void ShowShape(Mat ImShow, int x,int y, int tileShape, int tileSize, int tileLineThickness)
 {
@@ -1627,6 +1642,7 @@ void MainWindow::on_pushButtonCreateOut_clicked()
 
                     if (diff > 90)
                         diff = 180-diff;
+                    DirectionDifferenceHistogram[diff]++;
                 }
 
                 if(!calceinSignal && actinSignal)
