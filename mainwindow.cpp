@@ -30,20 +30,79 @@ using namespace std;
 using namespace boost::filesystem;
 using namespace cv;
 
-int FindResultingDirection(int *DirectionHistogram)
+double FindResultingDirection(int *DirectionHistogram)
 {
-    double longestResulting
+    double longestResultingVector = 0;
+    double resultingDirection;
     for(int startDir = 0; startDir<180; startDir++)
     {
+        double a = 0.0;
+        double b = 0.0;
         int stopDir = startDir + 180;
 
         for(int dir = startDir; dir < stopDir; dir++)
         {
-            sin((double)dir)
+            int normDir;
+            if(dir < 180)
+                normDir = dir;
+            else
+                normDir = dir - 180;
+            double length = (double)DirectionHistogram[normDir];
+            a += length * cos((double)dir/180.0*PI);
+            b += length * sin((double)dir/180.0*PI);
+        }
+        double localLength = sqrt(a*a+b*b);
+        if(longestResultingVector < localLength)
+        {
+            longestResultingVector = localLength;
+            resultingDirection = atan2(b,a)/PI*180.0;
         }
     }
-}
+    if(resultingDirection < 0)
+        resultingDirection += 360;
+    if (resultingDirection >= 180)
+        resultingDirection -=180;
 
+    return resultingDirection;
+}
+//----------------------------------------------------------------------------------
+double FindSpread(int *DirectionHistogram, double resultingDir)
+{
+    int startDir =  (int)round(resultingDir) - 90;
+    int stopDir = startDir + 180;
+    double sum = 0;
+    double count = 0;
+    for(int dir = startDir; dir < stopDir; dir++)
+    {
+        int normDir;
+        normDir = dir;
+        if(normDir >= 180)
+            normDir = dir - 180;
+        if(normDir <= 0)
+            normDir = dir + 180;
+        sum += (resultingDir - dir) * (resultingDir - dir) * DirectionHistogram[normDir];
+        count += DirectionHistogram[normDir];
+    }
+    return sqrt(sum/count);
+}
+//----------------------------------------------------------------------------------
+string DirHistogramToString(int *DirectionHistogram)
+{
+    string Out = "Hist";
+    for(int dir = 0; dir < 180; dir++)
+    {
+        Out += " \t";
+        Out += to_string(DirectionHistogram[dir]);
+
+    }
+    for(int dir = 0; dir < 180; dir++)
+    {
+        Out += " \t";
+        Out += to_string(DirectionHistogram[dir]);
+
+    }
+    return Out;
+}
 
 //----------------------------------------------------------------------------------
 void ShowShape(Mat ImShow, int x,int y, int tileShape, int tileSize, int tileLineThickness)
@@ -1491,30 +1550,66 @@ void MainWindow::on_pushButtonCreateOut_clicked()
         ui->textEdit->append("Empty first image vector");
         return;
     }
-    if(ImVect2.size() =! rowCount)
+    if(ImVect2.size() != zCount)
     {
         ui->textEdit->append("Improper size of second image vector");
         return;
     }
-    if(FileParVect1.size() =! rowCount)
+    if(FileParVect1.size() != zCount)
     {
         ui->textEdit->append("Improper size of first parameter vector");
         return;
     }
-    if(FileParVect2.size() =! rowCount)
+    if(FileParVect2.size() != zCount)
     {
         ui->textEdit->append("Improper size of second parameter vector");
         return;
     }
 
+    for(int z = 0; z < zCount ;z++)
+    {
+        Mat LocalIm1;
+        ImVect1[z].copyTo(LocalIm1);
+        //FileParams Params1 = FileParVect1[z];
+        medianBlur(LocalIm1,LocalIm1,3);
+        ImageAnalysis(LocalIm1, &FileParVect1[z], intensityThresholdIm1);
+
+        Mat LocalIm2;
+        ImVect2[z].copyTo(LocalIm2);
+        //FileParams Params2 = FileParVect2[z];
+        medianBlur(LocalIm2,LocalIm2,3);
+        ImageAnalysis(LocalIm2, &FileParVect2[z], intensityThresholdIm2);
+
+        LocalIm1.release();
+        LocalIm1.release();
+
+    }
+
+
     int zOffsetMin = -10;
     int zOffsetMax = 10;
-    int zOffcetCount = zOffsetMax - zOffsetMin + 1;
+    int zOffsetCount = zOffsetMax - zOffsetMin + 1;
 
-    int *zOffsetValue = new int[zOffcetCount];
-    int *ActinTiles = new int[zOffcetCount];
-    int *CalceinTiles = new int[zOffcetCount];
-    int *CoexistingTiles = new int[zOffcetCount];
+    int *zOffsetValue = new int[zOffsetCount];
+    int *ActinTiles = new int[zOffsetCount];
+    int *CalceinTiles = new int[zOffsetCount];
+    int *CoexistingTiles = new int[zOffsetCount];
+
+    double *ActinMainDir = new double[zOffsetCount];
+    double *ActinSpread = new double[zOffsetCount];
+    double *CalceinMainDir = new double[zOffsetCount];
+    double *CalceinSpread = new double[zOffsetCount];
+
+    double *ActinWCalceinMainDir = new double[zOffsetCount];
+    double *ActinWCalceinSpread = new double[zOffsetCount];
+    double *ActinNCalceinMainDir = new double[zOffsetCount];
+    double *ActinNCalceinSpread = new double[zOffsetCount];
+
+    double *CalceinWActinMainDir = new double[zOffsetCount];
+    double *CalceinWActinSpread = new double[zOffsetCount];
+    double *CalceinNActinMainDir = new double[zOffsetCount];
+    double *CalceinNActinSpread = new double[zOffsetCount];
+
 
     /*
         zOffsetValue
@@ -1523,7 +1618,7 @@ void MainWindow::on_pushButtonCreateOut_clicked()
         CoexistingTiles
      */
 
-    for(int i = 0; i < zOffcetCount; i++)
+    for(int i = 0; i < zOffsetCount; i++)
     {
         zOffsetValue[i] = 0;
         ActinTiles[i] = 0;
@@ -1531,10 +1626,25 @@ void MainWindow::on_pushButtonCreateOut_clicked()
         CoexistingTiles[i] = 0;
     }
 
-    for(int zOffset = -10;zOffset <=10; zOffset++)
+    int *AcitinDirectionHistogramOverall  = new int[180];
+    int *CalceinDirectionHistogramOverall = new int[180];
+
+    int *AcitinDirectionHistogramCoexist  = new int[180];
+    int *CalceinDirectionHistogramCoexist = new int[180];
+
+    int *AcitinDirectionHistogramNCoexist  = new int[180];
+    int *CalceinDirectionHistogramNCoexist = new int[180];
+
+    int *DirectionDifferenceHistogram = new int[91];
+
+
+    string Out2 = "Actin Dir Histograms \n";
+
+
+    for(int zOffsetIndex = 0;zOffsetIndex < zOffsetCount; zOffsetIndex++)
     {
-        zOffsetValue[zOffset] = zOffset;
-        //string StrOut = "Actin File Name\tCalcein File Name\t z Plane\ttile Y\ttile X\tdir Actin\tdir Calcein\tmean intensity Actin\tmean intensity Calcein\tAbs dir difference\n";
+        int zOffset = zOffsetIndex + zOffsetMin;
+        zOffsetValue[zOffsetIndex] = zOffset;
 
         int zStart = 0;
         int zStop = zCount;
@@ -1544,15 +1654,6 @@ void MainWindow::on_pushButtonCreateOut_clicked()
 
         if((zStop + zOffset)>= zCount)
             zStop = zCount - zOffset;
-
-        int *AcitinDirectionHistogramOverall  = new int[180];
-        int *CalceinDirectionHistogramOverall = new int[180];
-
-        int *AcitinDirectionHistogramCoexist  = new int[180];
-        int *CalceinDirectionHistogramCoexist = new int[180];
-
-        int *AcitinDirectionHistogramNCoexist  = new int[180];
-        int *CalceinDirectionHistogramNCoexist = new int[180];
 
         for(int i = 0; i < 180; i++)
         {
@@ -1566,7 +1667,7 @@ void MainWindow::on_pushButtonCreateOut_clicked()
             CalceinDirectionHistogramNCoexist[i] = 0;
         }
 
-        int *DirectionDifferenceHistogram = new int[91];
+
 
         for(int i = 0; i < 91; i++)
         {
@@ -1575,17 +1676,17 @@ void MainWindow::on_pushButtonCreateOut_clicked()
 
         for(int z = zStart; z < zStop ;z++)
         {
-            Mat LocalIm1;
-            ImVect1[z].copyTo(LocalIm1);
+            //Mat LocalIm1;
+            //ImVect1[z].copyTo(LocalIm1);
             FileParams Params1 = FileParVect1[z];
-            medianBlur(LocalIm1,LocalIm1,3);
-            ImageAnalysis(LocalIm1, &Params1, intensityThresholdIm1);
+            //medianBlur(LocalIm1,LocalIm1,3);
+            //ImageAnalysis(LocalIm1, &Params1, intensityThresholdIm1);
 
-            Mat LocalIm2;
-            ImVect2[z + zOffset].copyTo(LocalIm2);
+            //Mat LocalIm2;
+            //ImVect2[z + zOffset].copyTo(LocalIm2);
             FileParams Params2 = FileParVect2[z + zOffset];
-            medianBlur(LocalIm2,LocalIm2,3);
-            ImageAnalysis(LocalIm2, &Params2, intensityThresholdIm2);
+            //medianBlur(LocalIm2,LocalIm2,3);
+            //ImageAnalysis(LocalIm2, &Params2, intensityThresholdIm2);
 
             int numOfTiles = Params1.ParamsVect.size();
             if (!numOfTiles )
@@ -1604,15 +1705,15 @@ void MainWindow::on_pushButtonCreateOut_clicked()
                 int x  = Params1.ParamsVect[t].tileX;
                 int y  = Params1.ParamsVect[t].tileY;
 
-                float angle1 = Params1.ParamsVect[t].Params[0];
-                float angle2 = Params2.ParamsVect[t].Params[0];
-                float meanInt1 = Params1.ParamsVect[t].Params[1];
-                float meanInt2 = Params2.ParamsVect[t].Params[1];
+                int angle1 = Params1.ParamsVect[t].Params[0];
+                int angle2 = Params2.ParamsVect[t].Params[0];
+                float meanInt1 = Params1.ParamsVect[t].Params[3];
+                float meanInt2 = Params2.ParamsVect[t].Params[3];
 
                 bool actinSignal = false;
                 if(meanInt1 >= meanIntensityTreshold)
                 {
-                    ActinTiles[zOffset]++;
+                    ActinTiles[zOffsetIndex]++;
                     actinSignal = true;
                     AcitinDirectionHistogramOverall[angle1]++;
                 }
@@ -1620,7 +1721,7 @@ void MainWindow::on_pushButtonCreateOut_clicked()
                 bool calceinSignal = false;
                 if(meanInt2 >= meanIntensityTreshold2)
                 {
-                    CalceinTiles[zOffset]++;
+                    CalceinTiles[zOffsetIndex]++;
                     calceinSignal = true;
                     CalceinDirectionHistogramOverall[angle2]++;
                 }
@@ -1628,13 +1729,13 @@ void MainWindow::on_pushButtonCreateOut_clicked()
                 bool coexistingSignal = false;
                 if(calceinSignal && actinSignal)
                 {
-                    CoexistingTiles[zOffset]++;
+                    CoexistingTiles[zOffsetIndex]++;
                     AcitinDirectionHistogramCoexist[angle1]++;
                     CalceinDirectionHistogramCoexist[angle2]++;
 
                     coexistingSignal = true;
 
-                    float diff;
+                    int diff;
                     if(angle1 > angle2)
                         diff = angle1 - angle2;
                     else
@@ -1655,35 +1756,102 @@ void MainWindow::on_pushButtonCreateOut_clicked()
                     CalceinDirectionHistogramNCoexist[angle2]++;
                 }
             }
-            LocalIm1.release();
-            LocalIm1.release();
+            //LocalIm1.release();
+            //LocalIm1.release();
+
 
 
         }
-        delete[] AcitinDirectionHistogramOverall;
-        delete[] CalceinDirectionHistogramOverall;
+        ActinMainDir[zOffsetIndex] = FindResultingDirection(AcitinDirectionHistogramOverall);
+        ActinSpread[zOffsetIndex] = FindSpread(AcitinDirectionHistogramOverall, ActinMainDir[zOffsetIndex]);
+        CalceinMainDir[zOffsetIndex] = FindResultingDirection(AcitinDirectionHistogramOverall);;
+        CalceinSpread;
 
-        delete[] AcitinDirectionHistogramCoexist;
-        delete[] CalceinDirectionHistogramCoexist;
+        ActinWCalceinMainDir[zOffsetIndex] = FindResultingDirection(AcitinDirectionHistogramOverall);;
+        ActinWCalceinSpread;
+        ActinNCalceinMainDir;
+        ActinNCalceinSpread;
 
-        delete[] AcitinDirectionHistogramNCoexist;
-        delete[] CalceinDirectionHistogramNCoexist;
+        CalceinWActinMainDir;
+        CalceinWActinSpread;
+        CalceinNActinMainDir;
+        CalceinNActinSpread;
 
-        delete[] DirectionDifferenceHistogram;
+
+        Out2 += DirHistogramToString(AcitinDirectionHistogramOverall);
+        Out2 += "\n";
+
     }
 
+    delete[] AcitinDirectionHistogramOverall;
+    delete[] CalceinDirectionHistogramOverall;
+
+    delete[] AcitinDirectionHistogramCoexist;
+    delete[] CalceinDirectionHistogramCoexist;
+
+    delete[] AcitinDirectionHistogramNCoexist;
+    delete[] CalceinDirectionHistogramNCoexist;
+
+    delete[] DirectionDifferenceHistogram;
+
+
+    string StrOut;
+
+    StrOut = "zOffeset\t#ActinSignalTiles\t#CalceinSignalTiles\t#CoexsistingSignalTiles\n";
+
+    for(int i = 0; i < zOffsetCount; i++)
+    {
+        StrOut += to_string(zOffsetValue[i]) + "\t";
+        StrOut += to_string(ActinTiles[i]) + "\t";
+        StrOut += to_string(CalceinTiles[i]) + "\t";
+        StrOut += to_string(CoexistingTiles[i]) + "\t";
+        StrOut += to_string(ActinMainDir[i]) + "\n";
+        ActinSpread
+        CalceinMainDir;
+        CalceinSpread;
+
+        ActinWCalceinMainDir;
+        ActinWCalceinSpread;
+        ActinNCalceinMainDir;
+        ActinNCalceinSpread;
+
+        CalceinWActinMainDir;
+        CalceinWActinSpread;
+        CalceinNActinMainDir;
+        CalceinNActinSpread;
+
+
+    }
+
+
+
     path OutFileName = OutputDirectory;
-    OutFileName.append("Summary ofset" + ItoStrLZPlusSign(zOffset,2) + ".txt");
+    OutFileName.append("Summary ofset.txt");
     std::ofstream out(OutFileName.string().c_str());
+    //std::ofstream out("L:\\ZTest2.txt");
     out << StrOut;
+    out << Out2;
     out.close();
-    StrOut.empty();
+    //StrOut.empty();
 
 
     delete[] zOffsetValue;
     delete[] ActinTiles;
     delete[] CalceinTiles;
     delete[] CoexistingTiles;
+    delete[] ActinMainDir;
+    delete[] CalceinMainDir;
+    delete[] CalceinSpread;
+
+    delete[] ActinWCalceinMainDir;
+    delete[] ActinWCalceinSpread;
+    delete[] ActinNCalceinMainDir;
+    delete[] ActinNCalceinSpread;
+
+    delete[] CalceinWActinMainDir;
+    delete[] CalceinWActinSpread;
+    delete[] CalceinNActinMainDir;
+    delete[] CalceinNActinSpread;
 
 
 
