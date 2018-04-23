@@ -103,6 +103,28 @@ string DirHistogramToString(int *DirectionHistogram)
     }
     return Out;
 }
+//----------------------------------------------------------------------------------
+string DirDifferenceHistogramToString(int *DirectionDiffHistogram)
+{
+    string Out = "Hist";
+    for(int dir = 0; dir <= 90; dir++)
+    {
+        Out += " \t";
+        Out += to_string(DirectionDiffHistogram[dir]);
+
+    }
+    return Out;
+}
+//----------------------------------------------------------------------------------
+int MeanOfHistogram(int *DirectionDiffHistogram)
+{
+    int sum = 0;
+    for(int dir = 0; dir <= 90; dir++)
+    {
+        sum += DirectionDiffHistogram[dir];
+    }
+    return sum/90;
+}
 
 //----------------------------------------------------------------------------------
 void ShowShape(Mat ImShow, int x,int y, int tileShape, int tileSize, int tileLineThickness)
@@ -1587,13 +1609,14 @@ void MainWindow::on_pushButtonCreateOut_clicked()
 
 
     int zOffsetMin = -10;
-    int zOffsetMax = 10;
+    int zOffsetMax = 25;
     int zOffsetCount = zOffsetMax - zOffsetMin + 1;
 
     int *zOffsetValue = new int[zOffsetCount];
     int *ActinTiles = new int[zOffsetCount];
     int *CalceinTiles = new int[zOffsetCount];
     int *CoexistingTiles = new int[zOffsetCount];
+    int *MeanDirrDiff = new int[zOffsetCount];
 
     double *ActinMainDir = new double[zOffsetCount];
     double *ActinSpread = new double[zOffsetCount];
@@ -1638,8 +1661,13 @@ void MainWindow::on_pushButtonCreateOut_clicked()
     int *DirectionDifferenceHistogram = new int[91];
 
 
-    string Out2 = "Actin Dir Histograms \n";
-
+    string StrOut1 = "Actin Dir Histograms \n";
+    string StrOut2 = "Calcein Dir Histograms \n";
+    string StrOut3 = "Actin w Calcein Dir Histograms \n";
+    string StrOut4 = "Actin n Calcein Dir Histograms \n";
+    string StrOut5 = "Calcein w Actin Dir Histograms \n";
+    string StrOut6 = "Calcein n Actin Dir Histograms \n";
+    string StrOut7 = "Direction Difference Histograms \n";
 
     for(int zOffsetIndex = 0;zOffsetIndex < zOffsetCount; zOffsetIndex++)
     {
@@ -1762,25 +1790,46 @@ void MainWindow::on_pushButtonCreateOut_clicked()
 
 
         }
+
+        MeanDirrDiff[zOffsetIndex] = MeanOfHistogram(DirectionDifferenceHistogram);
+
+
         ActinMainDir[zOffsetIndex] = FindResultingDirection(AcitinDirectionHistogramOverall);
         ActinSpread[zOffsetIndex] = FindSpread(AcitinDirectionHistogramOverall, ActinMainDir[zOffsetIndex]);
-        CalceinMainDir[zOffsetIndex] = FindResultingDirection(AcitinDirectionHistogramOverall);;
-        CalceinSpread;
+        CalceinMainDir[zOffsetIndex] = FindResultingDirection(CalceinDirectionHistogramOverall);
+        CalceinSpread[zOffsetIndex] = FindSpread(CalceinDirectionHistogramOverall, CalceinMainDir[zOffsetIndex]);;
 
-        ActinWCalceinMainDir[zOffsetIndex] = FindResultingDirection(AcitinDirectionHistogramOverall);;
-        ActinWCalceinSpread;
-        ActinNCalceinMainDir;
-        ActinNCalceinSpread;
+        ActinWCalceinMainDir[zOffsetIndex] = FindResultingDirection(AcitinDirectionHistogramCoexist);
+        ActinWCalceinSpread[zOffsetIndex] = FindSpread(AcitinDirectionHistogramCoexist, ActinWCalceinMainDir[zOffsetIndex]);
+        ActinNCalceinMainDir[zOffsetIndex] = FindResultingDirection(AcitinDirectionHistogramNCoexist);
+        ActinNCalceinSpread[zOffsetIndex] = FindSpread(AcitinDirectionHistogramNCoexist, ActinNCalceinMainDir[zOffsetIndex]);
 
-        CalceinWActinMainDir;
-        CalceinWActinSpread;
-        CalceinNActinMainDir;
-        CalceinNActinSpread;
+        CalceinWActinMainDir[zOffsetIndex] = FindResultingDirection(CalceinDirectionHistogramCoexist);
+        CalceinWActinSpread[zOffsetIndex] = FindSpread(CalceinDirectionHistogramCoexist, CalceinWActinMainDir[zOffsetIndex]);
+        CalceinNActinMainDir[zOffsetIndex] = FindResultingDirection(CalceinDirectionHistogramNCoexist);
+        CalceinNActinSpread[zOffsetIndex] = FindSpread(CalceinDirectionHistogramNCoexist, CalceinNActinMainDir[zOffsetIndex]);
 
 
-        Out2 += DirHistogramToString(AcitinDirectionHistogramOverall);
-        Out2 += "\n";
+        StrOut1 += DirHistogramToString(AcitinDirectionHistogramOverall);
+        StrOut1 += "\n";
 
+        StrOut2 += DirHistogramToString(CalceinDirectionHistogramOverall);
+        StrOut2 += "\n";
+
+        StrOut3 += DirHistogramToString(AcitinDirectionHistogramCoexist);
+        StrOut3 += "\n";
+
+        StrOut4 += DirHistogramToString(AcitinDirectionHistogramNCoexist);
+        StrOut4 += "\n";
+
+        StrOut5 += DirHistogramToString(CalceinDirectionHistogramCoexist);
+        StrOut5 += "\n";
+
+        StrOut6 += DirHistogramToString(CalceinDirectionHistogramNCoexist);
+        StrOut6 += "\n";
+
+        StrOut7 += DirDifferenceHistogramToString(DirectionDifferenceHistogram);
+        StrOut7 += "\n";
     }
 
     delete[] AcitinDirectionHistogramOverall;
@@ -1797,28 +1846,31 @@ void MainWindow::on_pushButtonCreateOut_clicked()
 
     string StrOut;
 
-    StrOut = "zOffeset\t#ActinSignalTiles\t#CalceinSignalTiles\t#CoexsistingSignalTiles\n";
-
+    StrOut = "zOffeset\t#ActinSignalTiles\t#CalceinSignalTiles\t#CoexsistingSignalTiles\t";
+    StrOut += "Actin Main Dir\tActin Spread\tCalcein Main Dir\t Calcein Spread\t";
+    StrOut += "Actin w Calcein Main Dir\tActin w Calcein Spread\tCalcein w Actin Main Dir\t Calcein w Actin Spread\t";
+    StrOut += "Actin n Calcein Main Dir\tActin n Calcein Spread\tCalcein n Actin Main Dir\t Calcein n Actin Spread\n";
     for(int i = 0; i < zOffsetCount; i++)
     {
         StrOut += to_string(zOffsetValue[i]) + "\t";
         StrOut += to_string(ActinTiles[i]) + "\t";
         StrOut += to_string(CalceinTiles[i]) + "\t";
         StrOut += to_string(CoexistingTiles[i]) + "\t";
-        StrOut += to_string(ActinMainDir[i]) + "\n";
-        ActinSpread
-        CalceinMainDir;
-        CalceinSpread;
 
-        ActinWCalceinMainDir;
-        ActinWCalceinSpread;
-        ActinNCalceinMainDir;
-        ActinNCalceinSpread;
+        StrOut += to_string(ActinMainDir[i]) + "\t";
+        StrOut += to_string(ActinSpread[i]) + "\t";
+        StrOut += to_string(CalceinMainDir[i]) + "\t";
+        StrOut += to_string(CalceinSpread[i]) + "\t";
 
-        CalceinWActinMainDir;
-        CalceinWActinSpread;
-        CalceinNActinMainDir;
-        CalceinNActinSpread;
+        StrOut += to_string(ActinWCalceinMainDir[i]) + "\t";
+        StrOut += to_string(ActinWCalceinSpread[i]) + "\t";
+        StrOut += to_string(ActinNCalceinMainDir[i]) + "\t";
+        StrOut += to_string(ActinNCalceinSpread[i]) + "\t";
+
+        StrOut += to_string(CalceinWActinMainDir[i]) + "\t";
+        StrOut += to_string(CalceinWActinSpread[i]) + "\t";
+        StrOut += to_string(CalceinNActinMainDir[i]) + "\t";
+        StrOut += to_string(CalceinNActinSpread[i]) + "\n";
 
 
     }
@@ -1830,10 +1882,29 @@ void MainWindow::on_pushButtonCreateOut_clicked()
     std::ofstream out(OutFileName.string().c_str());
     //std::ofstream out("L:\\ZTest2.txt");
     out << StrOut;
-    out << Out2;
     out.close();
-    //StrOut.empty();
+    StrOut.empty();
 
+    path OutFileName2 = OutputDirectory;
+    OutFileName2.append("Histograms ofset.txt");
+    std::ofstream out2(OutFileName2.string().c_str());
+    //std::ofstream out("L:\\ZTest2.txt");
+    out2 << StrOut1;
+    out2 << StrOut2;
+    out2 << StrOut3;
+    out2 << StrOut4;
+    out2 << StrOut5;
+    out2 << StrOut6;
+    out2 << StrOut7;
+    out2.close();
+
+    StrOut1.empty();
+    StrOut2.empty();
+    StrOut3.empty();
+    StrOut4.empty();
+    StrOut5.empty();
+    StrOut6.empty();
+    StrOut7.empty();
 
     delete[] zOffsetValue;
     delete[] ActinTiles;
@@ -2625,6 +2696,23 @@ void MainWindow::on_pushButton_2_clicked()
     InputDirectoryIm2.append("/Calcein/");
     InputDirectoryIm3 = LocalDirectory;
     InputDirectoryIm3.append("/Nucleus/");
+
+    OutputDirectory = LocalDirectory;
+    if (!exists(OutputDirectory))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((OutputDirectory.string()+ " not exists ").c_str());
+        msgBox.exec();
+        InputDirectory = "C:\\";
+    }
+    if (!is_directory(OutputDirectory))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((OutputDirectory.string()+ " This is not a directory path ").c_str());
+        msgBox.exec();
+        OutputDirectory = "C:\\Data\\";
+    }
+    ui->LineEditSaveDirectory->setText(QString::fromWCharArray(OutputDirectory.wstring().c_str()));
 
     OpenDirection1Directory();
     OpenDirection2Directory();
