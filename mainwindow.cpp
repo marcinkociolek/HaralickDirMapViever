@@ -116,14 +116,36 @@ string DirDifferenceHistogramToString(int *DirectionDiffHistogram)
     return Out;
 }
 //----------------------------------------------------------------------------------
-int MeanOfHistogram(int *DirectionDiffHistogram)
+double MeanOfDirDiffHistogram(int *DirectionDiffHistogram)
 {
     int sum = 0;
+    int count = 0;
     for(int dir = 0; dir <= 90; dir++)
     {
-        sum += DirectionDiffHistogram[dir];
+        sum += dir * DirectionDiffHistogram[dir];
+        count += DirectionDiffHistogram[dir];
     }
-    return sum/90;
+    if (count != 0)
+        return ((double)sum)/(double)count;
+    else
+        return -1.0;
+}
+//----------------------------------------------------------------------------------
+double StdOfDirDiffHistogram(int *DirectionDiffHistogram, double mean)
+{
+    double sum = 0;
+    int count = 0;
+    for(int dir = 0; dir <= 90; dir++)
+    {
+        double diff = ((double)dir - mean);
+        sum += diff * diff * (double)DirectionDiffHistogram[dir];
+        count += DirectionDiffHistogram[dir];
+    }
+    if (count != 0)
+        return sqrt((sum)/(double)count);
+    else
+        return -1.0;
+
 }
 
 //----------------------------------------------------------------------------------
@@ -1616,7 +1638,9 @@ void MainWindow::on_pushButtonCreateOut_clicked()
     int *ActinTiles = new int[zOffsetCount];
     int *CalceinTiles = new int[zOffsetCount];
     int *CoexistingTiles = new int[zOffsetCount];
-    int *MeanDirrDiff = new int[zOffsetCount];
+
+    double *MeanDirrDiff = new double[zOffsetCount];
+    double *StdDirrDiff = new double[zOffsetCount];
 
     double *ActinMainDir = new double[zOffsetCount];
     double *ActinSpread = new double[zOffsetCount];
@@ -1791,7 +1815,8 @@ void MainWindow::on_pushButtonCreateOut_clicked()
 
         }
 
-        MeanDirrDiff[zOffsetIndex] = MeanOfHistogram(DirectionDifferenceHistogram);
+        MeanDirrDiff[zOffsetIndex] = MeanOfDirDiffHistogram(DirectionDifferenceHistogram);
+        StdDirrDiff[zOffsetIndex] = StdOfDirDiffHistogram(DirectionDifferenceHistogram, MeanDirrDiff[zOffsetIndex]);
 
 
         ActinMainDir[zOffsetIndex] = FindResultingDirection(AcitinDirectionHistogramOverall);
@@ -1847,6 +1872,7 @@ void MainWindow::on_pushButtonCreateOut_clicked()
     string StrOut;
 
     StrOut = "zOffeset\t#ActinSignalTiles\t#CalceinSignalTiles\t#CoexsistingSignalTiles\t";
+    StrOut += "MeanDifff\tStdDifff\t";
     StrOut += "Actin Main Dir\tActin Spread\tCalcein Main Dir\t Calcein Spread\t";
     StrOut += "Actin w Calcein Main Dir\tActin w Calcein Spread\tCalcein w Actin Main Dir\t Calcein w Actin Spread\t";
     StrOut += "Actin n Calcein Main Dir\tActin n Calcein Spread\tCalcein n Actin Main Dir\t Calcein n Actin Spread\n";
@@ -1856,6 +1882,9 @@ void MainWindow::on_pushButtonCreateOut_clicked()
         StrOut += to_string(ActinTiles[i]) + "\t";
         StrOut += to_string(CalceinTiles[i]) + "\t";
         StrOut += to_string(CoexistingTiles[i]) + "\t";
+
+        StrOut += to_string(MeanDirrDiff[i]) + "\t";
+        StrOut += to_string(StdDirrDiff[i]) + "\t";
 
         StrOut += to_string(ActinMainDir[i]) + "\t";
         StrOut += to_string(ActinSpread[i]) + "\t";
@@ -1906,6 +1935,9 @@ void MainWindow::on_pushButtonCreateOut_clicked()
     StrOut6.empty();
     StrOut7.empty();
 
+    delete[] MeanDirrDiff;
+    delete[] StdDirrDiff;
+
     delete[] zOffsetValue;
     delete[] ActinTiles;
     delete[] CalceinTiles;
@@ -1923,9 +1955,6 @@ void MainWindow::on_pushButtonCreateOut_clicked()
     delete[] CalceinWActinSpread;
     delete[] CalceinNActinMainDir;
     delete[] CalceinNActinSpread;
-
-
-
 }
 
 
