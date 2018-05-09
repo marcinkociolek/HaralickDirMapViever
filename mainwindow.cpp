@@ -916,7 +916,7 @@ Mat SchowImageCobination(cv::Mat Im1, cv::Mat Im2, cv::Mat Im3,
 
 }
 //------------------------------------------------------------------------------------------------------------------------------
-void MainWindow::ShowFromVector(int vectPos1, int offset, bool showIm1, bool showIm2, bool showIm3)
+void MainWindow::ShowFromVector(int vectPos, int offset, bool showIm1, bool showIm2, bool showIm3,bool offsetSecond)
 {
     int maxVectPos1 = ImVect1.size() - 1;
     int maxVectPos2 = ImVect2.size() - 1;
@@ -924,6 +924,23 @@ void MainWindow::ShowFromVector(int vectPos1, int offset, bool showIm1, bool sho
 
     int localMaxX,localMaxY;
     Mat ImTemp1, ImTemp2, ImTemp3;
+
+    int vectPos1;
+    int vectPos2;
+    int vectPos3;
+
+    if(offsetSecond)
+    {
+        vectPos1 = vectPos + offset;
+        vectPos2 = vectPos;
+    }
+    else
+    {
+        vectPos1 = vectPos;
+        vectPos2 = vectPos + offset;
+
+    }
+    vectPos3 = vectPos1;
 
     if(vectPos1 <= maxVectPos1 && maxVectPos1 >= 0)
     {
@@ -934,17 +951,15 @@ void MainWindow::ShowFromVector(int vectPos1, int offset, bool showIm1, bool sho
     else
         return;
 
-    int vectPos2 = vectPos1 + offset;
-    int vectPos3 = vectPos1;
 
-    if(vectPos2 <= maxVectPos2 || maxVectPos2 >= 0)
+    if(vectPos2 <= maxVectPos2 && maxVectPos2 >= 0)
     {
         ImTemp2 = ImVect2[vectPos2];
     }
     else
         ImTemp2.release();
 
-    if(vectPos3 <= maxVectPos3 || maxVectPos2 >= 0)
+    if(vectPos3 <= maxVectPos3 && maxVectPos2 >= 0)
     {
         ImTemp3 = ImVect3[vectPos3];
     }
@@ -1111,7 +1126,8 @@ void MainWindow::ShowImages()
     if(showImageCombination)
         imshow("Combination",SchowImageCobination(ImIn, ImIn2, ImIn3, minIm, maxIm, minIm2, maxIm2, minIm3, maxIm3, showVectIm1, showVectIm2, showVectIm3));
 
-    ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3);
+    ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3,
+            ui->checkBoxOffsetSecondIm->checkState());
 }
 //------------------------------------------------------------------------------------------------------------------------------
 void MainWindow::OpenDirection1Directory()
@@ -2679,25 +2695,48 @@ void MainWindow::on_spinBoxYPlaneToShow_valueChanged(int arg1)
 void MainWindow::on_checkBoxShowVectIm1_toggled(bool checked)
 {
     showVectIm1 = checked;
-    ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3);
+    ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3,
+                   ui->checkBoxOffsetSecondIm->checkState());
 }
 
 void MainWindow::on_checkBoxShowVectIm2_toggled(bool checked)
 {
     showVectIm2 = checked;
-    ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3);
+    ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3,
+                   ui->checkBoxOffsetSecondIm->checkState());
 }
 
 void MainWindow::on_checkBoxShowVectIm3_toggled(bool checked)
 {
     showVectIm3 = checked;
-    ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3);
+    ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3,
+                   ui->checkBoxOffsetSecondIm->checkState());
 }
 
 void MainWindow::on_spinBoxImOffsetVect_valueChanged(int arg1)
 {
     vectSliceOffset = arg1;
-    ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3);
+    if(vectSliceOffset > 0)
+    {
+       ui->spinBoxShowImVect1->setMaximum(ImVect1.size() - vectSliceOffset - 1);
+       ui->spinBoxShowImVect1->setMinimum(0);
+    }
+    if(vectSliceOffset == 0)
+    {
+        ui->spinBoxShowImVect1->setMaximum(ImVect1.size() - 1);
+        ui->spinBoxShowImVect1->setMinimum(0);
+    }
+    if(vectSliceOffset < 0)
+    {
+       ui->spinBoxShowImVect1->setMinimum(0 - vectSliceOffset);
+       ui->spinBoxShowImVect1->setMaximum(ImVect1.size() - 1);
+    }
+    vectSliceToShow = ui->spinBoxShowImVect1->value();
+
+
+    //ui->spinBoxImOffsetVect->setV(vectSliceToShow);
+    ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3,
+                   ui->checkBoxOffsetSecondIm->checkState());
 }
 
 void MainWindow::on_pushButton_2_clicked()

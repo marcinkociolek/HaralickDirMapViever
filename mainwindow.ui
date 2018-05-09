@@ -1016,6 +1016,19 @@
      <string>Open Common Folder</string>
     </property>
    </widget>
+   <widget class="QCheckBox" name="checkBoxOffsetSecondIm">
+    <property name="geometry">
+     <rect>
+      <x>720</x>
+      <y>650</y>
+      <width>72</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>offset scnd Im</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">

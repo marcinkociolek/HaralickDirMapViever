@@ -173,7 +173,7 @@ public:
     void MainWindow::ShowImages();
 
     //void MainWindow::ShowFromVector(int vectPos1, bool showIm1 = 1, bool showIm2 = 1, bool showIm3 = 1 );
-    void MainWindow::ShowFromVector(int vectPos1, int offset, bool showIm1, bool showIm2, bool showIm3);
+    void MainWindow::ShowFromVector(int vectPos1, int offset, bool showIm1, bool showIm2, bool showIm3, bool offsetSecond = false);
     void MainWindow::FreeImageVectors();
     void MainWindow::ShowXZFromVector(int yPosition);
 
