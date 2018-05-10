@@ -30,10 +30,18 @@ using namespace std;
 using namespace boost::filesystem;
 using namespace cv;
 
+std::string OutputStringFromNumber(double number)
+{
+    if(number == -1000.0)
+        return " ";
+    else
+        return to_string(number);
+}
+
 double FindResultingDirection(int *DirectionHistogram)
 {
     double longestResultingVector = 0;
-    double resultingDirection;
+    double resultingDirection = -1000;
     for(int startDir = 0; startDir<180; startDir++)
     {
         double a = 0.0;
@@ -55,19 +63,28 @@ double FindResultingDirection(int *DirectionHistogram)
         if(longestResultingVector < localLength)
         {
             longestResultingVector = localLength;
-            resultingDirection = atan2(b,a)/PI*180.0;
+            if(a == 0.0 && b == 0.0)
+                resultingDirection = -1000.0;
+            else
+                resultingDirection = atan2(b,a)/PI*180.0;
+
         }
     }
-    if(resultingDirection < 0)
-        resultingDirection += 360;
-    if (resultingDirection >= 180)
-        resultingDirection -=180;
+    if(resultingDirection < 0.0)
+        resultingDirection += 360.0;
+    if (resultingDirection >= 180.0)
+        resultingDirection -=180.0;
+    if(resultingDirection < 0.0 || resultingDirection > 180.0)
+        return -1000.0;
 
     return resultingDirection;
 }
 //----------------------------------------------------------------------------------
 double FindSpread(int *DirectionHistogram, double resultingDir)
 {
+    if (resultingDir == -1000.0)
+        return -1000.0;
+
     int startDir =  (int)round(resultingDir) - 90;
     int stopDir = startDir + 180;
     double sum = 0;
@@ -78,12 +95,15 @@ double FindSpread(int *DirectionHistogram, double resultingDir)
         normDir = dir;
         if(normDir >= 180)
             normDir = dir - 180;
-        if(normDir <= 0)
+        if(normDir < 0)
             normDir = dir + 180;
         sum += (resultingDir - dir) * (resultingDir - dir) * DirectionHistogram[normDir];
         count += DirectionHistogram[normDir];
     }
-    return sqrt(sum/count);
+    if(count != 0.0)
+        return sqrt(sum/count);
+    else
+        return -2000.0;
 }
 //----------------------------------------------------------------------------------
 string DirHistogramToString(int *DirectionHistogram)
@@ -128,7 +148,7 @@ double MeanOfDirDiffHistogram(int *DirectionDiffHistogram)
     if (count != 0)
         return ((double)sum)/(double)count;
     else
-        return -1.0;
+        return -1000.0;
 }
 //----------------------------------------------------------------------------------
 double StdOfDirDiffHistogram(int *DirectionDiffHistogram, double mean)
@@ -144,7 +164,7 @@ double StdOfDirDiffHistogram(int *DirectionDiffHistogram, double mean)
     if (count != 0)
         return sqrt((sum)/(double)count);
     else
-        return -1.0;
+        return -1000.0;
 
 }
 
@@ -1744,17 +1764,8 @@ void MainWindow::on_pushButtonCreateOut_clicked()
 
         for(int z = zStart; z < zStop ;z++)
         {
-            //Mat LocalIm1;
-            //ImVect1[z].copyTo(LocalIm1);
             FileParams Params1 = FileParVect1[z];
-            //medianBlur(LocalIm1,LocalIm1,3);
-            //ImageAnalysis(LocalIm1, &Params1, intensityThresholdIm1);
-
-            //Mat LocalIm2;
-            //ImVect2[z + zOffset].copyTo(LocalIm2);
             FileParams Params2 = FileParVect2[z + zOffset];
-            //medianBlur(LocalIm2,LocalIm2,3);
-            //ImageAnalysis(LocalIm2, &Params2, intensityThresholdIm2);
 
             int numOfTiles = Params1.ParamsVect.size();
             if (!numOfTiles )
@@ -1899,23 +1910,23 @@ void MainWindow::on_pushButtonCreateOut_clicked()
         StrOut += to_string(CalceinTiles[i]) + "\t";
         StrOut += to_string(CoexistingTiles[i]) + "\t";
 
-        StrOut += to_string(MeanDirrDiff[i]) + "\t";
-        StrOut += to_string(StdDirrDiff[i]) + "\t";
+        StrOut += OutputStringFromNumber(MeanDirrDiff[i]) + "\t";
+        StrOut += OutputStringFromNumber(StdDirrDiff[i]) + "\t";
 
-        StrOut += to_string(ActinMainDir[i]) + "\t";
-        StrOut += to_string(ActinSpread[i]) + "\t";
-        StrOut += to_string(CalceinMainDir[i]) + "\t";
-        StrOut += to_string(CalceinSpread[i]) + "\t";
+        StrOut += OutputStringFromNumber(ActinMainDir[i]) + "\t";
+        StrOut += OutputStringFromNumber(ActinSpread[i]) + "\t";
+        StrOut += OutputStringFromNumber(CalceinMainDir[i]) + "\t";
+        StrOut += OutputStringFromNumber(CalceinSpread[i]) + "\t";
 
-        StrOut += to_string(ActinWCalceinMainDir[i]) + "\t";
-        StrOut += to_string(ActinWCalceinSpread[i]) + "\t";
-        StrOut += to_string(ActinNCalceinMainDir[i]) + "\t";
-        StrOut += to_string(ActinNCalceinSpread[i]) + "\t";
+        StrOut += OutputStringFromNumber(ActinWCalceinMainDir[i]) + "\t";
+        StrOut += OutputStringFromNumber(ActinWCalceinSpread[i]) + "\t";
+        StrOut += OutputStringFromNumber(ActinNCalceinMainDir[i]) + "\t";
+        StrOut += OutputStringFromNumber(ActinNCalceinSpread[i]) + "\t";
 
-        StrOut += to_string(CalceinWActinMainDir[i]) + "\t";
-        StrOut += to_string(CalceinWActinSpread[i]) + "\t";
-        StrOut += to_string(CalceinNActinMainDir[i]) + "\t";
-        StrOut += to_string(CalceinNActinSpread[i]) + "\n";
+        StrOut += OutputStringFromNumber(CalceinWActinMainDir[i]) + "\t";
+        StrOut += OutputStringFromNumber(CalceinWActinSpread[i]) + "\t";
+        StrOut += OutputStringFromNumber(CalceinNActinMainDir[i]) + "\t";
+        StrOut += OutputStringFromNumber(CalceinNActinSpread[i]) + "\n";
 
 
     }
@@ -2782,6 +2793,7 @@ void MainWindow::on_pushButton_2_clicked()
     }
     ui->LineEditSaveDirectory->setText(QString::fromWCharArray(OutputDirectory.wstring().c_str()));
 
+    ui->textEdit->clear();
     OpenDirection1Directory();
     OpenDirection2Directory();
     OpenImage1Directory();
