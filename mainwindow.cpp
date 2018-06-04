@@ -217,7 +217,7 @@ MainWindow::MainWindow(QWidget *parent) :
     minIm = ui->doubleSpinBoxImMin->value();
     maxIm = ui->doubleSpinBoxImMax->value();
     tileLineThickness = ui->spinBoxImposedShapeThickness->value();
-    featNr = ui->spinBoxFeatureToShow->value();
+    featNr = 0;//featNr = ui->spinBoxFeatureToShow->value();
     meanIntensityTreshold = ui->doubleSpinBoxProcTresh->value();
     lineLength = ui->spinBoxLineLength->value();
     imposedLineThickness = ui->spinBoxImposedLineThickness->value();
@@ -229,7 +229,7 @@ MainWindow::MainWindow(QWidget *parent) :
     minIm3 = ui->doubleSpinBoxImMin3->value();
     maxIm3 = ui->doubleSpinBoxImMax3->value();
     meanIntensityTreshold2 = ui->doubleSpinBoxProcTresh2->value();
-    zOffset = ui->spinBoxZOffset->value();
+    zOffset = 0; // = ui->spinBoxZOffset->value();
     zFrame = 0;
     showVectIm1 = ui->checkBoxShowVectIm1->checkState();
     showVectIm2 = ui->checkBoxShowVectIm2->checkState();
@@ -598,6 +598,9 @@ void MainWindow::ShowImage(cv::Mat Im, FileParams Params,
     int maxX = Im.cols;
     int maxY = Im.rows;
 
+    if(Im.empty())
+        return;
+
     if(!maxX || ! maxY)
     {
         QMessageBox msgBox;
@@ -639,6 +642,8 @@ void MainWindow::ShowImage(cv::Mat Im, FileParams Params,
 //----------------------------------------------------------------------------------------------------------------
 void MainWindow::ImageAnalysis(cv::Mat Im, FileParams *Params, unsigned short intensityThreshold)
 {
+    if(Im.empty())
+        return;
     Im.convertTo(Im,CV_16U);
     Mat Roi;
     int roiMaxX, roiMaxY; // Bounding box sizes for ROI
@@ -754,6 +759,10 @@ void MainWindow::Show2Image(cv::Mat Im, cv::Mat Im2, FileParams Params, FilePara
 
 
 {
+    if(Im.empty())
+        return;
+    if(Im2.empty())
+        return;
     int maxX = Im.cols;
     int maxY = Im.rows;
 
@@ -989,6 +998,21 @@ void MainWindow::ShowFromVector(int vectPos, int offset, bool showIm1, bool show
     imshow("From Vector",SchowImageCobination(ImTemp1, ImTemp2, ImTemp3,
                                               minIm, maxIm, minIm2, maxIm2, minIm3, maxIm3,
                                               showIm1,showIm2,showIm3));
+    ImIn = ImTemp1;
+    ImIn2 = ImTemp2;
+    ImIn3 = ImTemp2;
+    FilePar1 = FileParVect1[vectPos1];
+    FilePar2 = FileParVect2[vectPos2];
+
+    Mat ImTemp;
+    medianBlur(ImIn,ImTemp,3);
+    ImageAnalysis(ImTemp, &FilePar1, intensityThresholdIm1);
+
+    medianBlur(ImIn2,ImTemp,3);
+    ImageAnalysis(ImTemp, &FilePar2, intensityThresholdIm2);
+
+
+    ShowImages();
 }
 //------------------------------------------------------------------------------------------------------------------------------
 void MainWindow::ShowXZFromVector(int yPosition)
@@ -1146,8 +1170,8 @@ void MainWindow::ShowImages()
     if(showImageCombination)
         imshow("Combination",SchowImageCobination(ImIn, ImIn2, ImIn3, minIm, maxIm, minIm2, maxIm2, minIm3, maxIm3, showVectIm1, showVectIm2, showVectIm3));
 
-    ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3,
-            ui->checkBoxOffsetSecondIm->checkState());
+    //ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3,
+    //        ui->checkBoxOffsetSecondIm->checkState());
 }
 //------------------------------------------------------------------------------------------------------------------------------
 void MainWindow::OpenDirection1Directory()
@@ -2686,6 +2710,8 @@ void MainWindow::on_pushButtonLoadVectors_clicked()
     ui->spinBoxYPlaneToShow->setMaximum(ImVect1[0].rows);
     ui->spinBoxYPlaneToShow->setValue(ImVect1[0].rows/2);
     vectSliceToShow = 0;
+
+    //ShowImages();
     ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3);
     ShowXZFromVector(0);
 }
@@ -2695,6 +2721,8 @@ void MainWindow::on_pushButtonLoadVectors_clicked()
 void MainWindow::on_spinBoxShowImVect1_valueChanged(int arg1)
 {
     vectSliceToShow = arg1;
+
+    //ShowImages();
     ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3);
 }
 
