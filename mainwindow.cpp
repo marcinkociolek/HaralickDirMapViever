@@ -204,7 +204,42 @@ void ShowShape(Mat ImShow, int x,int y, int tileShape, int tileSize, int tileLin
         break;
     }
 }
+//----------------------------------------------------------------------------------
+void ShowShape(Mat ImShow, int x,int y, int tileShape, int tileSize, int tileLineThickness, Scalar LineColor)
+{
+    switch (tileShape)
+    {
+    case 1:
+        ellipse(ImShow, Point(x, y),
+        Size(tileSize / 2, tileSize / 2), 0.0, 0.0, 360.0,
+        LineColor, tileLineThickness);
+        break;
+    case 2:
 
+    {
+        int edgeLength = tileSize / 2;
+        Point vertice0(x - edgeLength / 2, y - (int)((float)edgeLength * 0.8660254));
+        Point vertice1(x + edgeLength - edgeLength / 2, y - (int)((float)edgeLength * 0.8660254));
+        Point vertice2(x + edgeLength, y);
+        Point vertice3(x + edgeLength - edgeLength / 2, y + (int)((float)edgeLength * 0.8660254));
+        Point vertice4(x - edgeLength / 2, y + (int)((float)edgeLength * 0.8660254));
+        Point vertice5(x - edgeLength, y);
+
+        line(ImShow, vertice0, vertice1, LineColor, tileLineThickness);
+        line(ImShow, vertice1, vertice2, LineColor, tileLineThickness);
+        line(ImShow, vertice2, vertice3, LineColor, tileLineThickness);
+        line(ImShow, vertice3, vertice4, LineColor, tileLineThickness);
+        line(ImShow, vertice4, vertice5, LineColor, tileLineThickness);
+        line(ImShow, vertice5, vertice0, LineColor, tileLineThickness);
+    }
+        break;
+    default:
+        rectangle(ImShow, Point(x - tileSize / 2, y - tileSize / 2),
+            Point(x - tileSize / 2 + tileSize, y - tileSize / 2 + tileSize / 2),
+            LineColor, tileLineThickness);
+        break;
+    }
+}
 //--------------------------------------------------------------------------------
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -805,7 +840,7 @@ void MainWindow::Show2Image(cv::Mat Im, cv::Mat Im2, FileParams Params, FilePara
         int y  = Params.ParamsVect[i].tileY;
         double angle = Params.ParamsVect[i].Params[featNr];
 
-        if(showShape)
+        if(showShape && Params.ParamsVect[i].Params[3] >= meanIntensityTreshold)
             ShowShape(ImShow, x, y, Params.tileShape, Params.tileSize, tileLineThickness);
 
         int lineOffsetX = (int)round(lineLength * sin(angle * PI / 180.0));
@@ -825,7 +860,7 @@ void MainWindow::Show2Image(cv::Mat Im, cv::Mat Im2, FileParams Params, FilePara
         int y  = Params2.ParamsVect[i].tileY;
         double angle = Params2.ParamsVect[i].Params[featNr];
 
-        if(showShape)
+        if(showShape && Params2.ParamsVect[i].Params[3] >= meanIntensityTreshold2)
             ShowShape(ImShow2, x, y, Params2.tileShape, Params2.tileSize, tileLineThickness);
 
         int lineOffsetX = (int)round(lineLength * sin(angle * PI / 180.0));
@@ -847,6 +882,142 @@ void MainWindow::Show2Image(cv::Mat Im, cv::Mat Im2, FileParams Params, FilePara
 
     imshow("Two images",ImOut);
 }
+//------------------------------------------------------------------------------------------------------------------------------
+Mat SchowImageCobination(cv::Mat Im1, cv::Mat Im2, cv::Mat Im3, FileParams Params, FileParams Params2,
+                         float minIm1, float maxIm1,
+                         float minIm2, float maxIm2,
+                         float minIm3, float maxIm3,
+                         bool showIm1, bool showIm2, bool showIm3, bool showShape, bool showLine,
+                         int tileLineThickness, int lineLength, int imposedLineThickness,
+                         float meanIntensityTreshold, float meanIntensityTreshold2)
+
+{
+    if(Im1.empty())
+        return Mat::zeros(1,1,CV_8UC3);
+
+    int maxX = Im1.cols;
+    int maxY = Im1.rows;
+    int maxXY = maxX*maxY;
+
+    if(Im2.empty())
+        Im2 = Mat::zeros(maxY, maxX, CV_16U);
+    if(Im3.empty())
+        Im3 = Mat::zeros(maxY, maxX, CV_16U);;
+
+    Mat ImShow = Mat::zeros(maxY, maxX, CV_8UC3);
+
+    float difference1 = maxIm1 - minIm1;
+    if(difference1 == 0)
+        difference1 = 1;
+    float gain1 = 255/difference1;
+    float offset1 = gain1 * minIm1;
+
+    float difference2 = maxIm2 - minIm2;
+    if(difference2 == 0)
+        difference2 = 1;
+    float gain2 = 255/difference2;
+    float offset2 = gain2 * minIm2;
+
+    float difference3 = maxIm3 - minIm3;
+    if(difference3 == 0)
+        difference3 = 1;
+    float gain3 = 255/difference3;
+    float offset3 = gain3 * minIm3;
+
+
+    float value;
+    unsigned char index;
+
+
+    unsigned short *wIm1 = (unsigned short *)Im1.data;
+    unsigned short *wIm2 = (unsigned short *)Im2.data;
+    unsigned short *wIm3 = (unsigned short *)Im3.data;
+    unsigned char *wImShow = (unsigned char *)ImShow.data;
+
+    for (int i = 0; i < maxXY; i++)
+    {
+
+        value = (float)(*wIm3) * gain3 - offset3;
+        if (value > 255)
+            value = 255;
+        if (value < 0)
+            value = 0;
+        index = (char)floor(value);
+        if(showIm3)
+            *wImShow = index;
+        else
+            *wImShow = 0;
+        wImShow++;
+
+        value = (float)(*wIm2) * gain2 - offset2;
+        if (value > 255)
+            value = 255;
+        if (value < 0)
+            value = 0;
+        index = (char)floor(value);
+        if(showIm2)
+            *wImShow = index;
+        else
+            *wImShow = 0;
+        wImShow++;
+
+        value = (float)(*wIm1) * gain1 - offset1;
+        if (value > 255)
+            value = 255;
+        if (value < 0)
+            value = 0;
+        index = (char)floor(value);
+        if(showIm1)
+            *wImShow = index;
+        else
+            *wImShow = 0;
+        wImShow++;
+        wIm1++;
+        wIm2++;
+        wIm3++;
+    }
+    int numOfDirections = (int)Params.ParamsVect.size();
+
+    for(int i = 0; i < numOfDirections; i++)
+    {
+        int x  = Params.ParamsVect[i].tileX;
+        int y  = Params.ParamsVect[i].tileY;
+        double angle = Params.ParamsVect[i].Params[0];
+
+        if(showShape && Params.ParamsVect[i].Params[3] >= meanIntensityTreshold)
+            ShowShape(ImShow, x, y, Params.tileShape, Params.tileSize, tileLineThickness, Scalar(255.0, 255.0, 255.0, 0.0));
+
+        int lineOffsetX = (int)round(lineLength * sin(angle * PI / 180.0));
+        int lineOffsetY = (int)round(lineLength * cos(angle * PI / 180.0));
+
+        if (angle >= -600 && showLine && Params.ParamsVect[i].Params[3] >= meanIntensityTreshold )
+        {
+            line(ImShow, Point(x - lineOffsetX, y - lineOffsetY), Point(x + lineOffsetX, y + lineOffsetY), Scalar(255.0, 255.0, 255.0, 0.0), imposedLineThickness);
+        }
+    }
+    numOfDirections = (int)Params2.ParamsVect.size();
+
+    for(int i = 0; i < numOfDirections; i++)
+    {
+        int x  = Params2.ParamsVect[i].tileX;
+        int y  = Params2.ParamsVect[i].tileY;
+        double angle = Params2.ParamsVect[i].Params[0];
+
+        if(showShape && Params2.ParamsVect[i].Params[3] >= meanIntensityTreshold2)
+            ShowShape(ImShow, x, y, Params2.tileShape, Params2.tileSize, tileLineThickness, Scalar(200.0, 200.0, 200.0, 0.0));
+
+        int lineOffsetX = (int)round(lineLength * sin(angle * PI / 180.0));
+        int lineOffsetY = (int)round(lineLength * cos(angle * PI / 180.0));
+
+        if (angle >= -600 && showLine && Params2.ParamsVect[i].Params[3] >= meanIntensityTreshold2 )
+        {
+            line(ImShow, Point(x - lineOffsetX, y - lineOffsetY), Point(x + lineOffsetX, y + lineOffsetY), Scalar(200.0, 200.0, 200.0, 0.0), imposedLineThickness);
+        }
+    }
+    return ImShow;
+
+}
+
 //------------------------------------------------------------------------------------------------------------------------------
 Mat SchowImageCobination(cv::Mat Im1, cv::Mat Im2, cv::Mat Im3,
                          float minIm1, float maxIm1,
@@ -953,6 +1124,7 @@ void MainWindow::ShowFromVector(int vectPos, int offset, bool showIm1, bool show
 
     int localMaxX,localMaxY;
     Mat ImTemp1, ImTemp2, ImTemp3;
+    FileParams ParamsTemp1, ParamsTemp2;
 
     int vectPos1;
     int vectPos2;
@@ -974,6 +1146,7 @@ void MainWindow::ShowFromVector(int vectPos, int offset, bool showIm1, bool show
     if(vectPos1 <= maxVectPos1 && maxVectPos1 >= 0)
     {
         ImTemp1 = ImVect1[vectPos1];
+        ParamsTemp1 = FileParVect1[vectPos1];
         localMaxX = ImTemp1.cols;
         localMaxX = ImTemp1.rows;
     }
@@ -984,6 +1157,7 @@ void MainWindow::ShowFromVector(int vectPos, int offset, bool showIm1, bool show
     if(vectPos2 <= maxVectPos2 && maxVectPos2 >= 0)
     {
         ImTemp2 = ImVect2[vectPos2];
+        ParamsTemp2 = FileParVect2[vectPos2];
     }
     else
         ImTemp2.release();
@@ -995,14 +1169,12 @@ void MainWindow::ShowFromVector(int vectPos, int offset, bool showIm1, bool show
     else
         ImTemp3.release();
 
-    imshow("From Vector",SchowImageCobination(ImTemp1, ImTemp2, ImTemp3,
-                                              minIm, maxIm, minIm2, maxIm2, minIm3, maxIm3,
-                                              showIm1,showIm2,showIm3));
+
     ImIn = ImTemp1;
     ImIn2 = ImTemp2;
     ImIn3 = ImTemp2;
-    FilePar1 = FileParVect1[vectPos1];
-    FilePar2 = FileParVect2[vectPos2];
+    FilePar1 = ParamsTemp1;
+    FilePar2 = ParamsTemp2;
 
     Mat ImTemp;
     medianBlur(ImIn,ImTemp,3);
@@ -1011,6 +1183,11 @@ void MainWindow::ShowFromVector(int vectPos, int offset, bool showIm1, bool show
     medianBlur(ImIn2,ImTemp,3);
     ImageAnalysis(ImTemp, &FilePar2, intensityThresholdIm2);
 
+    imshow("From Vector",SchowImageCobination(ImTemp1, ImTemp2, ImTemp3, FilePar1, FilePar2,
+                                              minIm, maxIm, minIm2, maxIm2, minIm3, maxIm3,
+                                              showIm1,showIm2,showIm3, showShape, showLine,
+                                              tileLineThickness, lineLength, imposedLineThickness,
+                                              meanIntensityTreshold, meanIntensityTreshold2));
 
     ShowImages();
 }
