@@ -616,7 +616,7 @@ FileParams  MainWindow::GetDirectionData(path FileToOpen)
 //FileParams MainWindow::GetStatisticalDataFromImage(path FileToOpen)
 
 //----------------------------------------------------------------------------------------------------------------
-void MainWindow::ShowImage(cv::Mat Im, FileParams Params,
+cv::Mat MainWindow::ShowImage(cv::Mat Im, FileParams Params,
                            bool sudocolor,
                            bool showShape,
                            bool showLine,
@@ -626,21 +626,24 @@ void MainWindow::ShowImage(cv::Mat Im, FileParams Params,
                            int featNr,
                            float meanIntensityTreshold,
                            double lineLength,
-                           int imposedLineThickness,
-                           std::string ShowWindowName)
+                           int imposedLineThickness)//,
+                           //std::string ShowWindowName)
 
 {
+    Mat ImOut;
+    ImOut = Mat::zeros(10,10,CV_8U);
+
     int maxX = Im.cols;
     int maxY = Im.rows;
 
     if(Im.empty())
-        return;
+        return ImOut;
 
     if(!maxX || ! maxY)
     {
         QMessageBox msgBox;
         ui->textEdit->append("\n Image File not exists");
-        return;
+        return ImOut;
     }
     Mat ImShow;
     Im.convertTo(Im,CV_16U);
@@ -648,7 +651,7 @@ void MainWindow::ShowImage(cv::Mat Im, FileParams Params,
     if(sudocolor)
         ImShow = ShowImage16PseudoColor(Im,minIm,maxIm);
     else
-        ImShow = Im;
+        ImShow = ShowImage16Gray(Im,minIm,maxIm);
 
     //
 
@@ -669,10 +672,14 @@ void MainWindow::ShowImage(cv::Mat Im, FileParams Params,
 
         if (angle >= -600 && showLine && Params.ParamsVect[i].Params[3] >= meanIntensityTreshold )
         {
-            line(ImShow, Point(x - lineOffsetX, y - lineOffsetY), Point(x + lineOffsetX, y + lineOffsetY), Scalar(0, 0.0, 0.0, 0.0), imposedLineThickness);
+            if(sudocolor)
+                line(ImShow, Point(x - lineOffsetX, y - lineOffsetY), Point(x + lineOffsetX, y + lineOffsetY), Scalar(0.0, 0.0, 0.0, 0.0), imposedLineThickness);
+            else
+                line(ImShow, Point(x - lineOffsetX, y - lineOffsetY), Point(x + lineOffsetX, y + lineOffsetY), Scalar(0.0, 0.0, 255.0, 0.0), imposedLineThickness);
         }
     }
-    imshow(ShowWindowName.c_str(),ImShow);
+    return ImShow;
+    //imshow(ShowWindowName.c_str(),ImShow);
 }
 //----------------------------------------------------------------------------------------------------------------
 void MainWindow::ImageAnalysis(cv::Mat Im, FileParams *Params, unsigned short intensityThreshold)
@@ -781,7 +788,7 @@ void MainWindow::ImageAnalysis(cv::Mat Im, FileParams *Params, unsigned short in
 }
 
 //----------------------------------------------------------------------------------------------------------------
-void MainWindow::Show2Image(cv::Mat Im, cv::Mat Im2, FileParams Params, FileParams Params2,
+cv::Mat MainWindow::Show2Image(cv::Mat Im, cv::Mat Im2, FileParams Params, FileParams Params2,
                            bool sudocolor,
                            bool showShape,
                            bool showLine,
@@ -794,10 +801,11 @@ void MainWindow::Show2Image(cv::Mat Im, cv::Mat Im2, FileParams Params, FilePara
 
 
 {
+
     if(Im.empty())
-        return;
+        return Mat::zeros(10,20,CV_8U);
     if(Im2.empty())
-        return;
+        return Mat::zeros(10,20,CV_8U);
     int maxX = Im.cols;
     int maxY = Im.rows;
 
@@ -805,7 +813,7 @@ void MainWindow::Show2Image(cv::Mat Im, cv::Mat Im2, FileParams Params, FilePara
     {
         QMessageBox msgBox;
         ui->textEdit->append("\n Image File not exists");
-        return;
+        return Mat::zeros(10,20,CV_8U);
     }
     Mat ImShow;
     int maxX2 = Im2.cols;
@@ -815,11 +823,11 @@ void MainWindow::Show2Image(cv::Mat Im, cv::Mat Im2, FileParams Params, FilePara
     {
         QMessageBox msgBox;
         ui->textEdit->append("\n Image File not exists");
-        return;
+        return Mat::zeros(10,20,CV_8U);
     }
     Mat ImShow2;
-    Im.convertTo(Im,CV_16U);
-    Im2.convertTo(Im2,CV_16U);
+    //Im.convertTo(Im,CV_16U);
+    //Im2.convertTo(Im2,CV_16U);
     if(sudocolor)
     {
         ImShow = ShowImage16PseudoColor(Im,minIm,maxIm);
@@ -827,8 +835,8 @@ void MainWindow::Show2Image(cv::Mat Im, cv::Mat Im2, FileParams Params, FilePara
     }
     else
     {
-        ImShow = Im;
-        ImShow2 = Im2;
+        ImShow = ShowImage16Gray(Im,minIm,maxIm);
+        ImShow2 = ShowImage16Gray(Im2,minIm2,maxIm2);
     }
 
 
@@ -841,15 +849,24 @@ void MainWindow::Show2Image(cv::Mat Im, cv::Mat Im2, FileParams Params, FilePara
         double angle = Params.ParamsVect[i].Params[featNr];
 
         if(showShape && Params.ParamsVect[i].Params[3] >= meanIntensityTreshold)
+        {
             ShowShape(ImShow, x, y, Params.tileShape, Params.tileSize, tileLineThickness);
-
+        }
         int lineOffsetX = (int)round(lineLength * sin(angle * PI / 180.0));
         int lineOffsetY = (int)round(lineLength * cos(angle * PI / 180.0));
 
         if (angle >= -600 && showLine && Params.ParamsVect[i].Params[3] >= meanIntensityTreshold )
         {
-            line(ImShow, Point(x - lineOffsetX, y - lineOffsetY), Point(x + lineOffsetX, y + lineOffsetY), Scalar(0, 0.0, 0.0, 0.0), imposedLineThickness);
-            line(ImShow2, Point(x - lineOffsetX, y - lineOffsetY), Point(x + lineOffsetX, y + lineOffsetY), Scalar(0, 0.0, 0.0, 0.0), imposedLineThickness);
+            if(sudocolor)
+            {
+                line(ImShow, Point(x - lineOffsetX, y - lineOffsetY), Point(x + lineOffsetX, y + lineOffsetY), Scalar(0, 0.0, 0.0, 0.0), imposedLineThickness);
+                line(ImShow2, Point(x - lineOffsetX, y - lineOffsetY), Point(x + lineOffsetX, y + lineOffsetY), Scalar(0, 0.0, 0.0, 0.0), imposedLineThickness);
+            }
+            else
+            {
+                line(ImShow, Point(x - lineOffsetX, y - lineOffsetY), Point(x + lineOffsetX, y + lineOffsetY), Scalar(0, 250.0, 0.0, 0.0), imposedLineThickness);
+                line(ImShow2, Point(x - lineOffsetX, y - lineOffsetY), Point(x + lineOffsetX, y + lineOffsetY), Scalar(0, 250.0, 0.0, 0.0), imposedLineThickness);
+            }
         }
     }
     numOfDirections = (int)Params2.ParamsVect.size();
@@ -868,8 +885,17 @@ void MainWindow::Show2Image(cv::Mat Im, cv::Mat Im2, FileParams Params, FilePara
 
         if (angle >= -600 && showLine && Params2.ParamsVect[i].Params[3] >= meanIntensityTreshold2 )
         {
-            line(ImShow, Point(x - lineOffsetX, y - lineOffsetY), Point(x + lineOffsetX, y + lineOffsetY), Scalar(250.0, 0.0, 0.0, 0.0), imposedLineThickness);
-            line(ImShow2, Point(x - lineOffsetX, y - lineOffsetY), Point(x + lineOffsetX, y + lineOffsetY), Scalar(250.0, 0.0, 0.0, 0.0), imposedLineThickness);
+            if(sudocolor)
+            {
+                line(ImShow, Point(x - lineOffsetX, y - lineOffsetY), Point(x + lineOffsetX, y + lineOffsetY), Scalar(250.0, 0.0, 0.0, 0.0), imposedLineThickness);
+                line(ImShow2, Point(x - lineOffsetX, y - lineOffsetY), Point(x + lineOffsetX, y + lineOffsetY), Scalar(250.0, 0.0, 0.0, 0.0), imposedLineThickness);
+            }
+            else
+            {
+                line(ImShow, Point(x - lineOffsetX, y - lineOffsetY), Point(x + lineOffsetX, y + lineOffsetY), Scalar(0.0, 0.0, 250.0, 0.0), imposedLineThickness);
+                line(ImShow2, Point(x - lineOffsetX, y - lineOffsetY), Point(x + lineOffsetX, y + lineOffsetY), Scalar(0.0, 0.0, 250.0, 0.0), imposedLineThickness);
+            }
+
         }
     }
 
@@ -880,7 +906,8 @@ void MainWindow::Show2Image(cv::Mat Im, cv::Mat Im2, FileParams Params, FilePara
     ImShow.copyTo(ImOut(Rect(0, 0, ImShow.cols , ImShow.rows)));
     ImShow2.copyTo(ImOut(Rect(maxX, 0, ImShow2.cols , ImShow2.rows)));
 
-    imshow("Two images",ImOut);
+    return ImOut;
+    //imshow("Two images",ImOut);
 }
 //------------------------------------------------------------------------------------------------------------------------------
 Mat SchowImageCobination(cv::Mat Im1, cv::Mat Im2, cv::Mat Im3, FileParams Params, FileParams Params2,
@@ -1172,7 +1199,7 @@ void MainWindow::ShowFromVector(int vectPos, int offset, bool showIm1, bool show
 
     ImIn = ImTemp1;
     ImIn2 = ImTemp2;
-    ImIn3 = ImTemp2;
+    ImIn3 = ImTemp3;
     FilePar1 = ParamsTemp1;
     FilePar2 = ParamsTemp2;
 
@@ -1182,13 +1209,13 @@ void MainWindow::ShowFromVector(int vectPos, int offset, bool showIm1, bool show
 
     medianBlur(ImIn2,ImTemp,3);
     ImageAnalysis(ImTemp, &FilePar2, intensityThresholdIm2);
-
-    imshow("From Vector",SchowImageCobination(ImTemp1, ImTemp2, ImTemp3, FilePar1, FilePar2,
+/*
+    imshow("From Vector",SchowImageCobination(ImIn, ImIn2, ImIn3, FilePar1, FilePar2,
                                               minIm, maxIm, minIm2, maxIm2, minIm3, maxIm3,
-                                              showIm1,showIm2,showIm3, showShape, showLine,
+                                              showVectIm1,showVectIm2,showVectIm3, showShape, showLine,
                                               tileLineThickness, lineLength, imposedLineThickness,
                                               meanIntensityTreshold, meanIntensityTreshold2));
-
+*/
     ShowImages();
 }
 //------------------------------------------------------------------------------------------------------------------------------
@@ -1336,16 +1363,21 @@ void MainWindow::FreeImageVectors()
 void MainWindow::ShowImages()
 {
     if(showFirstImage)
-        ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
-                  meanIntensityTreshold, lineLength, imposedLineThickness, "In File 1");
+        imshow("In File 1",ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
+                  meanIntensityTreshold, lineLength, imposedLineThickness));
     if(showSecondImage)
-        ShowImage(ImIn2, FilePar2, sudocolor, showShape, showLine, minIm2, maxIm2, tileLineThickness, featNr,
-                  meanIntensityTreshold2, lineLength, imposedLineThickness, "In File 2");
+        imshow("In File 2",ShowImage(ImIn2, FilePar2, sudocolor, showShape, showLine, minIm2, maxIm2, tileLineThickness, featNr,
+                  meanIntensityTreshold2, lineLength, imposedLineThickness));
     if(showTwoImages)
-        Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
-                   tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness);
+        imshow("Two images",Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
+                   tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness));
     if(showImageCombination)
-        imshow("Combination",SchowImageCobination(ImIn, ImIn2, ImIn3, minIm, maxIm, minIm2, maxIm2, minIm3, maxIm3, showVectIm1, showVectIm2, showVectIm3));
+        imshow("Combination",SchowImageCobination(ImIn, ImIn2, ImIn3, FilePar1, FilePar2,
+                                                  minIm, maxIm, minIm2, maxIm2, minIm3, maxIm3,
+                                                  showVectIm1,showVectIm2,showVectIm3, showShape, showLine,
+                                                  tileLineThickness, lineLength, imposedLineThickness,
+                                                  meanIntensityTreshold, meanIntensityTreshold2));
+    //    imshow("Combination",SchowImageCobination(ImIn, ImIn2, ImIn3, minIm, maxIm, minIm2, maxIm2, minIm3, maxIm3, showVectIm1, showVectIm2, showVectIm3));
 
     //ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3,
     //        ui->checkBoxOffsetSecondIm->checkState());
@@ -1573,6 +1605,8 @@ void MainWindow::on_FileListWidget_currentTextChanged(const QString &currentText
     medianBlur(ImIn,ImIn,3);
     ImageAnalysis(ImIn, &FilePar1, intensityThresholdIm1);
     ShowImages();
+    //ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3,
+    //               ui->checkBoxOffsetSecondIm->checkState());
 
 }
 
@@ -1580,42 +1614,56 @@ void MainWindow::on_checkBoxShowSape_toggled(bool checked)
 {
     showShape = checked;
     ShowImages();
+    //ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3,
+    //               ui->checkBoxOffsetSecondIm->checkState());
 }
 
 void MainWindow::on_checkBoxShowLine_toggled(bool checked)
 {
     showLine = checked;
     ShowImages();
+    //ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3,
+    //               ui->checkBoxOffsetSecondIm->checkState());
 }
 
 void MainWindow::on_checkBoxShowSudoColor_toggled(bool checked)
 {
     sudocolor = checked;
     ShowImages();
+    //ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3,
+    //               ui->checkBoxOffsetSecondIm->checkState());
 }
 
 void MainWindow::on_spinBoxImposedShapeThickness_valueChanged(int arg1)
 {
     tileLineThickness = arg1;
     ShowImages();
+    //ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3,
+    //               ui->checkBoxOffsetSecondIm->checkState());
 }
 
 void MainWindow::on_spinBoxImposedLineThickness_valueChanged(int arg1)
 {
     imposedLineThickness = arg1;
     ShowImages();
+    //ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3,
+    //               ui->checkBoxOffsetSecondIm->checkState());
 }
 
 void MainWindow::on_spinBoxLineLength_valueChanged(int arg1)
 {
     lineLength = arg1;
     ShowImages();
+    //ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3,
+    //               ui->checkBoxOffsetSecondIm->checkState());
 }
 
 void MainWindow::on_spinBoxFeatureToShow_valueChanged(int arg1)
 {
     featNr = arg1;
     ShowImages();
+    //ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3,
+    //               ui->checkBoxOffsetSecondIm->checkState());
 }
 
 void MainWindow::on_pushButtonChoseOutDir_clicked()
@@ -1657,27 +1705,49 @@ void MainWindow::on_pushButtonSaveOut_pressed()
     {
         return;
     }
-    path OutFileName = OutputDirectory;
-    OutFileName.append(ImFileName.stem().string() + ".bmp");
-    imwrite(OutFileName.string(),ImShow);
+    path OutFileName;
+
+    //OutFileName = OutputDirectory;
+    //OutFileName.append(ImFileName.stem().string() + ".bmp");
+    //imwrite(OutFileName.string(),ImShow);
+
+
+
+    if(showImageCombination)
+    {
+        OutFileName = OutputDirectory;
+        OutFileName.append(ImFileName.stem().string() + "Combination.bmp");
+        imwrite(OutFileName.string(),SchowImageCobination(ImIn, ImIn2, ImIn3, FilePar1, FilePar2,
+                                                          minIm, maxIm, minIm2, maxIm2, minIm3, maxIm3,
+                                                          showVectIm1,showVectIm2,showVectIm3, showShape, showLine,
+                                                          tileLineThickness, lineLength, imposedLineThickness,
+                                                          meanIntensityTreshold, meanIntensityTreshold2));
+    }
+
 }
 
 void MainWindow::on_doubleSpinBoxImMin_valueChanged(double arg1)
 {
     minIm = arg1;
     ShowImages();
+    //ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3,
+    //               ui->checkBoxOffsetSecondIm->checkState());
 }
 
 void MainWindow::on_doubleSpinBoxImMax_valueChanged(double arg1)
 {
     maxIm = arg1;
     ShowImages();
+    //ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3,
+    //               ui->checkBoxOffsetSecondIm->checkState());
 }
 
 void MainWindow::on_doubleSpinBoxProcTresh_valueChanged(double arg1)
 {
     meanIntensityTreshold = arg1;
     ShowImages();
+    //ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3,
+    //               ui->checkBoxOffsetSecondIm->checkState());
 }
 
 void MainWindow::on_pushButton2_clicked()
@@ -1715,19 +1785,24 @@ void MainWindow::on_File2ListWidget_currentTextChanged(const QString &currentTex
     ImageAnalysis(ImIn2, &FilePar2, intensityThresholdIm2);
     ShowImages();
     //ProcessImage();
-
+    //ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3,
+    //               ui->checkBoxOffsetSecondIm->checkState());
 }
 
 void MainWindow::on_doubleSpinBoxImMin2_valueChanged(double arg1)
 {
     minIm2 = arg1;
     ShowImages();
+    //ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3,
+    //               ui->checkBoxOffsetSecondIm->checkState());
 }
 
 void MainWindow::on_doubleSpinBoxImMax2_valueChanged(double arg1)
 {
     maxIm2 = arg1;
     ShowImages();
+    //ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3,
+    //               ui->checkBoxOffsetSecondIm->checkState());
 }
 
 void MainWindow::on_doubleSpinBoxProcTresh2_valueChanged(double arg1)
@@ -1736,14 +1811,17 @@ void MainWindow::on_doubleSpinBoxProcTresh2_valueChanged(double arg1)
     medianBlur(ImIn,ImIn,3);
     ImageAnalysis(ImIn, &FilePar1, intensityThresholdIm1);
     ShowImages();
+    //ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3,
+    //               ui->checkBoxOffsetSecondIm->checkState());
 }
 
 void MainWindow::on_checkBoxShowSecondIm_toggled(bool checked)
 {
     showSecondImage = checked;
     if(showSecondImage)
-        ShowImage(ImIn2, FilePar2, sudocolor, showShape, showLine, minIm2, maxIm2, tileLineThickness, featNr,
-                  meanIntensityTreshold2, lineLength, imposedLineThickness, "In File 2");
+        ShowImages();
+        //ShowImage(ImIn2, FilePar2, sudocolor, showShape, showLine, minIm2, maxIm2, tileLineThickness, featNr,
+        //          meanIntensityTreshold2, lineLength, imposedLineThickness, "In File 2");
     else
         destroyWindow("In File 2");
 }
@@ -1753,8 +1831,9 @@ void MainWindow::on_checkBoxShowFirstIm_toggled(bool checked)
 {
     showFirstImage = checked;
     if(showFirstImage)
-        ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
-                  meanIntensityTreshold, lineLength, imposedLineThickness, "In File 1");
+        ShowImages();
+        //ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
+        //          meanIntensityTreshold, lineLength, imposedLineThickness, "In File 1");
     else
         destroyWindow("In File 1");
 }
@@ -1763,8 +1842,9 @@ void MainWindow::on_checkBoxShowTwoIm_toggled(bool checked)
 {
     showTwoImages = checked;
     if(showTwoImages)
-        Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
-                   tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness);
+        ShowImages();
+        //Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
+        //           tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness);
     else
         destroyWindow("Two images");
 }
@@ -2547,6 +2627,8 @@ void MainWindow::on_spinBoxIntensityThreshold_valueChanged(int arg1)
     ImageAnalysis(ImIn, &FilePar1, intensityThresholdIm1);
 
     ShowImages();
+    //ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3,
+    //               ui->checkBoxOffsetSecondIm->checkState());
 }
 
 void MainWindow::on_spinBoxIntensityThreshold2_valueChanged(int arg1)
@@ -2555,12 +2637,18 @@ void MainWindow::on_spinBoxIntensityThreshold2_valueChanged(int arg1)
     ImageAnalysis(ImIn2, &FilePar2, intensityThresholdIm2);
 
     ShowImages();
+    //ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3,
+    //               ui->checkBoxOffsetSecondIm->checkState());
 }
 
 void MainWindow::on_checkBoxShowImageCombination_toggled(bool checked)
 {
     showImageCombination = checked;
-    ShowImages();
+    //ShowImages();
+    if(showImageCombination)
+        ShowImages();
+    else
+        destroyWindow("Combination");
 }
 
 void MainWindow::on_pushButton2_2_clicked()
@@ -2627,18 +2715,24 @@ void MainWindow::on_FileIm3ListWidget_currentTextChanged(const QString &currentT
     //medianBlur(ImIn2,ImIn2,3);
     //ImageAnalysis(ImIn2, &FilePar2, intensityThresholdIm2);
     ShowImages();
+    //ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3,
+    //               ui->checkBoxOffsetSecondIm->checkState());
 }
 
 void MainWindow::on_doubleSpinBoxImMin3_valueChanged(double arg1)
 {
     minIm3 = arg1;
     ShowImages();
+    //ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3,
+    //               ui->checkBoxOffsetSecondIm->checkState());
 }
 
 void MainWindow::on_doubleSpinBoxImMax3_valueChanged(double arg1)
 {
     maxIm3 = arg1;
     ShowImages();
+    //ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3,
+    //               ui->checkBoxOffsetSecondIm->checkState());
 }
 
 void MainWindow::on_FileIm1ListWidget_currentTextChanged(const QString &currentText)
@@ -2911,22 +3005,25 @@ void MainWindow::on_spinBoxYPlaneToShow_valueChanged(int arg1)
 void MainWindow::on_checkBoxShowVectIm1_toggled(bool checked)
 {
     showVectIm1 = checked;
-    ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3,
-                   ui->checkBoxOffsetSecondIm->checkState());
+    ShowImages();
+    //ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3,
+    //               ui->checkBoxOffsetSecondIm->checkState());
 }
 
 void MainWindow::on_checkBoxShowVectIm2_toggled(bool checked)
 {
     showVectIm2 = checked;
-    ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3,
-                   ui->checkBoxOffsetSecondIm->checkState());
+    ShowImages();
+    //ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3,
+    //               ui->checkBoxOffsetSecondIm->checkState());
 }
 
 void MainWindow::on_checkBoxShowVectIm3_toggled(bool checked)
 {
     showVectIm3 = checked;
-    ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3,
-                   ui->checkBoxOffsetSecondIm->checkState());
+    ShowImages();
+    //ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3,
+    //               ui->checkBoxOffsetSecondIm->checkState());
 }
 
 void MainWindow::on_spinBoxImOffsetVect_valueChanged(int arg1)

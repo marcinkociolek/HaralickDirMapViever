@@ -145,7 +145,7 @@ public:
     FileParams MainWindow::GetDirectionData(boost::filesystem::path FileToOpen);
     //DirDetectionParams MainWindow::GetDirectionData2(boost::filesystem::path FileToOpen);
 
-    void MainWindow::ShowImage(cv::Mat Im, FileParams Params,
+    cv::Mat MainWindow::ShowImage(cv::Mat Im, FileParams Params,
                                bool sudocolor,
                                bool showShape,
                                bool showLine,
@@ -155,10 +155,10 @@ public:
                                int featNr,
                                float meanIntensityTreshold,
                                double lineLength,
-                               int imposedLineThickness,
-                               std::string ShowWindowName);
+                               int imposedLineThickness);//,
+                               //std::string ShowWindowName);
 
-    void MainWindow::Show2Image(cv::Mat Im, cv::Mat Im2, FileParams Params, FileParams Params2,
+    cv::Mat  MainWindow::Show2Image(cv::Mat Im, cv::Mat Im2, FileParams Params, FileParams Params2,
                                bool sudocolor,
                                bool showShape,
                                bool showLine,
@@ -279,6 +279,10 @@ private slots:
     void on_spinBoxImOffsetVect_valueChanged(int arg1);
 
     void on_pushButton_2_clicked();
+
+
+
+
 
 private:
     Ui::MainWindow *ui;
