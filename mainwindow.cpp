@@ -663,19 +663,25 @@ cv::Mat MainWindow::ShowImage(cv::Mat Im, FileParams Params,
         int y  = Params.ParamsVect[i].tileY;
         double angle = Params.ParamsVect[i].Params[featNr];
 
-        if(showShape)
-            ShowShape(ImShow, x, y, Params.tileShape, Params.tileSize, tileLineThickness);
-
-
         int lineOffsetX = (int)round(lineLength * sin(angle * PI / 180.0));
         int lineOffsetY = (int)round(lineLength * cos(angle * PI / 180.0));
 
-        if (angle >= -600 && showLine && Params.ParamsVect[i].Params[3] >= meanIntensityTreshold )
+        if (angle >= -600 && Params.ParamsVect[i].Params[3] >= meanIntensityTreshold )
         {
-            if(sudocolor)
-                line(ImShow, Point(x - lineOffsetX, y - lineOffsetY), Point(x + lineOffsetX, y + lineOffsetY), Scalar(0.0, 0.0, 0.0, 0.0), imposedLineThickness);
-            else
-                line(ImShow, Point(x - lineOffsetX, y - lineOffsetY), Point(x + lineOffsetX, y + lineOffsetY), Scalar(0.0, 0.0, 255.0, 0.0), imposedLineThickness);
+            if(showShape)
+            {
+                if(sudocolor)
+                    ShowShape(ImShow, x, y, Params.tileShape, Params.tileSize, tileLineThickness,Scalar(0.0, 0.0, 0.0, 0.0));
+                else
+                    ShowShape(ImShow, x, y, Params.tileShape, Params.tileSize, tileLineThickness,Scalar(0.0, 0.0, 255.0, 0.0));
+            }
+            if(showLine)
+            {
+                if(sudocolor)
+                    line(ImShow, Point(x - lineOffsetX, y - lineOffsetY), Point(x + lineOffsetX, y + lineOffsetY), Scalar(0.0, 0.0, 0.0, 0.0), imposedLineThickness);
+                else
+                    line(ImShow, Point(x - lineOffsetX, y - lineOffsetY), Point(x + lineOffsetX, y + lineOffsetY), Scalar(0.0, 0.0, 255.0, 0.0), imposedLineThickness);
+            }
         }
     }
     return ImShow;
@@ -840,18 +846,58 @@ cv::Mat MainWindow::Show2Image(cv::Mat Im, cv::Mat Im2, FileParams Params, FileP
     }
 
 
-    int numOfDirections = (int)Params.ParamsVect.size();
+    unsigned long long numOfDirections = Params.ParamsVect.size();
 
-    for(int i = 0; i < numOfDirections; i++)
+    for(unsigned long long i = 0; i < numOfDirections; i++)
     {
         int x  = Params.ParamsVect[i].tileX;
         int y  = Params.ParamsVect[i].tileY;
         double angle = Params.ParamsVect[i].Params[featNr];
 
-        if(showShape && Params.ParamsVect[i].Params[3] >= meanIntensityTreshold)
+        if(showShape)
         {
-            ShowShape(ImShow, x, y, Params.tileShape, Params.tileSize, tileLineThickness);
+            if((Params.ParamsVect[i].Params[3] >= meanIntensityTreshold) && !(Params2.ParamsVect[i].Params[3]>= meanIntensityTreshold2))
+            {
+                if(sudocolor)
+                {
+                    ShowShape(ImShow, x, y, Params.tileShape, Params.tileSize, tileLineThickness, Scalar(0.0, 0.0, 0.0, 0.0));
+                    ShowShape(ImShow2, x, y, Params.tileShape, Params.tileSize, tileLineThickness, Scalar(0.0, 0.0, 0.0, 0.0));
+                }
+                else
+                {
+                    ShowShape(ImShow, x, y, Params.tileShape, Params.tileSize, tileLineThickness, Scalar(0.0, 250.0, 0.0, 0.0));
+                    ShowShape(ImShow2, x, y, Params.tileShape, Params.tileSize, tileLineThickness, Scalar(0.0, 250.0, 0.0, 0.0));
+                }
+            }
+            if((Params.ParamsVect[i].Params[3] < meanIntensityTreshold) && (Params2.ParamsVect[i].Params[3]>= meanIntensityTreshold2))
+            {
+                if(sudocolor)
+                {
+                    ShowShape(ImShow, x, y, Params.tileShape, Params.tileSize, tileLineThickness, Scalar(255.0, 255.0, 255.0, 0.0));
+                    ShowShape(ImShow2, x, y, Params.tileShape, Params.tileSize, tileLineThickness, Scalar(255.0, 255.0, 255.0, 0.0));
+                }
+                else
+                {
+                    ShowShape(ImShow, x, y, Params.tileShape, Params.tileSize, tileLineThickness, Scalar(0, 0.0, 250.0, 0.0));
+                    ShowShape(ImShow2, x, y, Params.tileShape, Params.tileSize, tileLineThickness, Scalar(0, 0.0, 250.0, 0.0));
+                }
+            }
+            if(Params.ParamsVect[i].Params[3] >= meanIntensityTreshold && (Params2.ParamsVect[i].Params[3]>= meanIntensityTreshold2))
+            {
+                if(sudocolor)
+                {
+                    ShowShape(ImShow, x, y, Params.tileShape, Params.tileSize, tileLineThickness, Scalar(200, 200.0, 200.0, 0.0));
+                    ShowShape(ImShow2, x, y, Params.tileShape, Params.tileSize, tileLineThickness, Scalar(200, 200.0, 200.0, 0.0));
+                }
+                else
+                {
+                    ShowShape(ImShow, x, y, Params.tileShape, Params.tileSize, tileLineThickness, Scalar(250, 100.0, 100.0, 0.0));
+                    ShowShape(ImShow2, x, y, Params.tileShape, Params.tileSize, tileLineThickness, Scalar(250, 100.0, 100.0, 0.0));
+                }
+            }
+
         }
+
         int lineOffsetX = (int)round(lineLength * sin(angle * PI / 180.0));
         int lineOffsetY = (int)round(lineLength * cos(angle * PI / 180.0));
 
@@ -877,8 +923,7 @@ cv::Mat MainWindow::Show2Image(cv::Mat Im, cv::Mat Im2, FileParams Params, FileP
         int y  = Params2.ParamsVect[i].tileY;
         double angle = Params2.ParamsVect[i].Params[featNr];
 
-        if(showShape && Params2.ParamsVect[i].Params[3] >= meanIntensityTreshold2)
-            ShowShape(ImShow2, x, y, Params2.tileShape, Params2.tileSize, tileLineThickness);
+
 
         int lineOffsetX = (int)round(lineLength * sin(angle * PI / 180.0));
         int lineOffsetY = (int)round(lineLength * cos(angle * PI / 180.0));
@@ -1598,6 +1643,13 @@ void MainWindow::on_FileListWidget_currentTextChanged(const QString &currentText
     path imageToOpen = InputDirectoryIm1;//path imageToOpen = FilePar1.ImFolderName;
     imageToOpen.append(FilePar1.ImFileName.string());
     ImIn = imread(imageToOpen.string().c_str(),CV_LOAD_IMAGE_ANYDEPTH);
+    if(ImIn.empty())
+    {
+        ui->textEdit->append("\nFailed To Open Image\n");
+        ui->textEdit->append(imageToOpen.string().c_str());
+        ui->textEdit->append("\n");
+        return;
+    }
     if(ImIn.type() != CV_16U)
     {
         ImIn.convertTo(ImIn,CV_16U);
@@ -1605,17 +1657,12 @@ void MainWindow::on_FileListWidget_currentTextChanged(const QString &currentText
     medianBlur(ImIn,ImIn,3);
     ImageAnalysis(ImIn, &FilePar1, intensityThresholdIm1);
     ShowImages();
-    //ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3,
-    //               ui->checkBoxOffsetSecondIm->checkState());
-
 }
 
 void MainWindow::on_checkBoxShowSape_toggled(bool checked)
 {
     showShape = checked;
     ShowImages();
-    //ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3,
-    //               ui->checkBoxOffsetSecondIm->checkState());
 }
 
 void MainWindow::on_checkBoxShowLine_toggled(bool checked)
