@@ -32,7 +32,7 @@ using namespace cv;
 
 std::string OutputStringFromNumber(double number)
 {
-    if(number == -1000.0)
+    if(number < -999.0)
         return " ";
     else
         return to_string(number);
@@ -82,7 +82,7 @@ double FindResultingDirection(int *DirectionHistogram)
 //----------------------------------------------------------------------------------
 double FindSpread(int *DirectionHistogram, double resultingDir)
 {
-    if (resultingDir == -1000.0)
+    if (resultingDir < -999.0)
         return -1000.0;
 
     int startDir =  (int)round(resultingDir) - 90;
@@ -241,6 +241,52 @@ void ShowShape(Mat ImShow, int x,int y, int tileShape, int tileSize, int tileLin
     }
 }
 //--------------------------------------------------------------------------------
+ void CreateDispalyWindows(bool showIm1, bool showIm2, bool showIm1and2, bool showImComb)
+ {
+     if (showIm1)
+     {
+         namedWindow("In File 1", WINDOW_NORMAL);
+     }
+     else
+         destroyWindow("In File 1");
+
+     if (showIm2)
+     {
+         namedWindow("In File 2", WINDOW_NORMAL);
+     }
+     else
+         destroyWindow("In File 2");
+
+     if (showIm1and2)
+     {
+         namedWindow("Two images", WINDOW_NORMAL);
+     }
+     else
+         destroyWindow("Two images");
+
+     if (showImComb)
+     {
+         namedWindow("Combination", WINDOW_NORMAL);
+     }
+     else
+         destroyWindow("Combination");
+
+ }
+//--------------------------------------------------------------------------------
+void ResizeImages(int scale, int orgSizeY, int orgSizeX)
+{
+    if (scale < 1)
+        return;
+    if (orgSizeX < 50)
+        return;
+    if (orgSizeY < 50)
+        return;
+
+    resizeWindow("In File 1", orgSizeX / scale, orgSizeY / scale);
+    resizeWindow("In File 2", orgSizeX / scale, orgSizeY / scale);
+    resizeWindow("Two images", orgSizeX / scale, orgSizeY / scale * 2);
+}
+//--------------------------------------------------------------------------------
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -276,6 +322,12 @@ MainWindow::MainWindow(QWidget *parent) :
 
     intensityThresholdIm1 = ui->spinBoxIntensityThreshold->value();
     intensityThresholdIm2 = ui->spinBoxIntensityThreshold2->value();
+
+    displayScale = ui->spinBoxDisplayScale->value();
+
+    CreateDispalyWindows(showFirstImage, showSecondImage, showTwoImages, showImageCombination);
+
+
 }
 
 MainWindow::~MainWindow()
@@ -3148,4 +3200,10 @@ void MainWindow::on_pushButton_2_clicked()
     OpenImage1Directory();
     OpenImage2Directory();
     OpenImage3Directory();
+}
+
+void MainWindow::on_spinBoxDisplayScale_valueChanged(int arg1)
+{
+    displayScale = arg1;
+    ResizeImages(displayScale, ImIn.rows, ImIn.cols);
 }

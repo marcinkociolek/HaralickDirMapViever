@@ -86,6 +86,8 @@ public:
     int zOffset;
     int zFrame;
 
+    int displayScale;
+
     unsigned short intensityThresholdIm1;
     unsigned short intensityThresholdIm2;
     unsigned short intensityThresholdIm3;
@@ -283,6 +285,8 @@ private slots:
 
 
 
+
+    void on_spinBoxDisplayScale_valueChanged(int arg1);
 
 private:
     Ui::MainWindow *ui;
