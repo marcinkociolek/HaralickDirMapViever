@@ -243,30 +243,31 @@ void ShowShape(Mat ImShow, int x,int y, int tileShape, int tileSize, int tileLin
 //--------------------------------------------------------------------------------
  void CreateDispalyWindows(bool showIm1, bool showIm2, bool showIm1and2, bool showImComb)
  {
+     int flag = WINDOW_AUTOSIZE;//WINDOW_NORMAL;
      if (showIm1)
      {
-         namedWindow("In File 1", WINDOW_NORMAL);
+         namedWindow("In File 1", flag);
      }
      else
          destroyWindow("In File 1");
 
      if (showIm2)
      {
-         namedWindow("In File 2", WINDOW_NORMAL);
+         namedWindow("In File 2", flag);
      }
      else
          destroyWindow("In File 2");
 
      if (showIm1and2)
      {
-         namedWindow("Two images", WINDOW_NORMAL);
+         namedWindow("Two images", flag);
      }
      else
          destroyWindow("Two images");
 
      if (showImComb)
      {
-         namedWindow("Combination", WINDOW_NORMAL);
+         namedWindow("Combination", flag);
      }
      else
          destroyWindow("Combination");
@@ -275,6 +276,7 @@ void ShowShape(Mat ImShow, int x,int y, int tileShape, int tileSize, int tileLin
 //--------------------------------------------------------------------------------
 void ResizeImages(int scale, int orgSizeY, int orgSizeX)
 {
+    return;
     if (scale < 1)
         return;
     if (orgSizeX < 50)
@@ -324,6 +326,14 @@ MainWindow::MainWindow(QWidget *parent) :
     intensityThresholdIm2 = ui->spinBoxIntensityThreshold2->value();
 
     displayScale = ui->spinBoxDisplayScale->value();
+
+
+    ui->comboBoxImageScale->addItem("Images scale x 4");
+    ui->comboBoxImageScale->addItem("Images scale x 2");
+    ui->comboBoxImageScale->addItem("Images scale x 1");
+    ui->comboBoxImageScale->addItem("Images scale x 1/2");
+    ui->comboBoxImageScale->addItem("Images scale x 1/4");
+    imageScale = 1.0;
 
     CreateDispalyWindows(showFirstImage, showSecondImage, showTwoImages, showImageCombination);
 

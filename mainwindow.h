@@ -98,6 +98,7 @@ public:
     bool showVectIm3;
     int vectSliceToShow;
     int vectSliceOffset;
+    double imageScale;
 
     //    int maxX;
 //    int maxY;
