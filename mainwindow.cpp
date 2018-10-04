@@ -333,6 +333,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->comboBoxImageScale->addItem("Images scale x 1");
     ui->comboBoxImageScale->addItem("Images scale x 1/2");
     ui->comboBoxImageScale->addItem("Images scale x 1/4");
+    ui->comboBoxImageScale->setCurrentIndex(2);
     imageScale = 1.0;
 
     CreateDispalyWindows(showFirstImage, showSecondImage, showTwoImages, showImageCombination);
@@ -1469,21 +1470,42 @@ void MainWindow::FreeImageVectors()
 //------------------------------------------------------------------------------------------------------------------------------
 void MainWindow::ShowImages()
 {
+    Mat ImToShow;
     if(showFirstImage)
-        imshow("In File 1",ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
-                  meanIntensityTreshold, lineLength, imposedLineThickness));
+    {
+        ImToShow = ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
+                               meanIntensityTreshold, lineLength, imposedLineThickness);
+        if (imageScale !=1.0)
+            cv::resize(ImToShow,ImToShow,Size(),imageScale,imageScale,INTER_NEAREST);
+        imshow("In File 1",ImToShow);
+    }
     if(showSecondImage)
-        imshow("In File 2",ShowImage(ImIn2, FilePar2, sudocolor, showShape, showLine, minIm2, maxIm2, tileLineThickness, featNr,
-                  meanIntensityTreshold2, lineLength, imposedLineThickness));
+    {
+        ImToShow = ShowImage(ImIn2, FilePar2, sudocolor, showShape, showLine, minIm2, maxIm2, tileLineThickness, featNr,
+                          meanIntensityTreshold2, lineLength, imposedLineThickness);
+        if (imageScale !=1.0)
+            cv::resize(ImToShow,ImToShow,Size(),imageScale,imageScale,INTER_NEAREST);
+        imshow("In File 2",ImToShow);
+    }
     if(showTwoImages)
-        imshow("Two images",Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
-                   tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness));
+    {
+        ImToShow = Show2Image(ImIn, ImIn2, FilePar1, FilePar2, sudocolor, showShape, showLine, minIm, maxIm, minIm2, maxIm2,
+                           tileLineThickness, featNr, meanIntensityTreshold, meanIntensityTreshold2, lineLength, imposedLineThickness);
+        if (imageScale !=1.0)
+            cv::resize(ImToShow,ImToShow,Size(),imageScale,imageScale,INTER_NEAREST);
+        imshow("Two images",ImToShow);
+    }
     if(showImageCombination)
-        imshow("Combination",SchowImageCobination(ImIn, ImIn2, ImIn3, FilePar1, FilePar2,
-                                                  minIm, maxIm, minIm2, maxIm2, minIm3, maxIm3,
-                                                  showVectIm1,showVectIm2,showVectIm3, showShape, showLine,
-                                                  tileLineThickness, lineLength, imposedLineThickness,
-                                                  meanIntensityTreshold, meanIntensityTreshold2));
+    {
+        ImToShow = SchowImageCobination(ImIn, ImIn2, ImIn3, FilePar1, FilePar2,
+                                                          minIm, maxIm, minIm2, maxIm2, minIm3, maxIm3,
+                                                          showVectIm1,showVectIm2,showVectIm3, showShape, showLine,
+                                                          tileLineThickness, lineLength, imposedLineThickness,
+                                                          meanIntensityTreshold, meanIntensityTreshold2);
+        if (imageScale !=1.0)
+            cv::resize(ImToShow,ImToShow,Size(),imageScale,imageScale,INTER_NEAREST);
+        imshow("Combination",ImToShow);
+    }
     //    imshow("Combination",SchowImageCobination(ImIn, ImIn2, ImIn3, minIm, maxIm, minIm2, maxIm2, minIm3, maxIm3, showVectIm1, showVectIm2, showVectIm3));
 
     //ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3,
@@ -3216,4 +3238,31 @@ void MainWindow::on_spinBoxDisplayScale_valueChanged(int arg1)
 {
     displayScale = arg1;
     ResizeImages(displayScale, ImIn.rows, ImIn.cols);
+}
+
+void MainWindow::on_comboBoxImageScale_currentIndexChanged(int index)
+{
+    switch(index)
+    {
+    case 0:
+        imageScale = 4.0;
+        break;
+    case 1:
+        imageScale = 2.0;
+        break;
+    case 2:
+        imageScale = 1.0;
+        break;
+
+    case 3:
+        imageScale = 1.0/2.0;
+        break;
+    case 4:
+        imageScale = 1.0/4.0;
+        break;
+    default:
+        imageScale = 1.0;
+        break;
+    }
+    ShowImages();
 }

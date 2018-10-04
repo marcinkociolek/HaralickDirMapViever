@@ -289,6 +289,8 @@ private slots:
 
     void on_spinBoxDisplayScale_valueChanged(int arg1);
 
+    void on_comboBoxImageScale_currentIndexChanged(int index);
+
 private:
     Ui::MainWindow *ui;
 };
