@@ -167,7 +167,38 @@ double StdOfDirDiffHistogram(int *DirectionDiffHistogram, double mean)
         return -1000.0;
 
 }
+//----------------------------------------------------------------------------------
+double MeanOfCos2Diff(int *DirectionDiffHistogram)
+{
+    double sum = 0;
+    int count = 0;
+    for(int dir = 0; dir <= 90; dir++)
+    {
+        sum += cos((double)dir*2.0*3.14159265359/180.0) * DirectionDiffHistogram[dir];
+        count += DirectionDiffHistogram[dir];
+    }
+    if (count != 0)
+        return ((double)sum)/(double)count;
+    else
+        return -1000.0;
+}
+//----------------------------------------------------------------------------------
+double StdOfCos2Diff(int *DirectionDiffHistogram, double mean)
+{
+    double sum = 0;
+    int count = 0;
+    for(int dir = 0; dir <= 90; dir++)
+    {
+        double diff = (cos((double)dir*2.0*3.14159265359/180.0) - mean);
+        sum += diff * diff * (double)DirectionDiffHistogram[dir];
+        count += DirectionDiffHistogram[dir];
+    }
+    if (count != 0)
+        return sqrt((sum)/(double)count);
+    else
+        return -1000.0;
 
+}
 //----------------------------------------------------------------------------------
 void ShowShape(Mat ImShow, int x,int y, int tileShape, int tileSize, int tileLineThickness)
 {
@@ -2090,6 +2121,16 @@ void MainWindow::on_pushButtonCreateOut_clicked()
     double *MeanDirrDiff = new double[zOffsetCount];
     double *StdDirrDiff = new double[zOffsetCount];
 
+    double *MeanCos2DirrDiff = new double[zOffsetCount];
+    double *StdCos2DirrDiff = new double[zOffsetCount];
+
+    double *MeanCos2DirrDiffActin = new double[zOffsetCount];
+    double *StdCos2DirrDiffActin = new double[zOffsetCount];
+
+    double *MeanCos2DirrDiffCalcein = new double[zOffsetCount];
+    double *StdCos2DirrDiffCalcein = new double[zOffsetCount];
+
+
     double *ActinMainDir = new double[zOffsetCount];
     double *ActinSpread = new double[zOffsetCount];
     double *CalceinMainDir = new double[zOffsetCount];
@@ -2131,6 +2172,8 @@ void MainWindow::on_pushButtonCreateOut_clicked()
     int *CalceinDirectionHistogramNCoexist = new int[180];
 
     int *DirectionDifferenceHistogram = new int[91];
+    int *DirectionDifferenceHistogramActin = new int[91];
+    int *DirectionDifferenceHistogramCalcein = new int[91];
 
 
     string StrOut1 = "Actin Dir Histograms \n";
@@ -2140,6 +2183,8 @@ void MainWindow::on_pushButtonCreateOut_clicked()
     string StrOut5 = "Calcein w Actin Dir Histograms \n";
     string StrOut6 = "Calcein n Actin Dir Histograms \n";
     string StrOut7 = "Direction Difference Histograms \n";
+    string StrOut8 = "Direction Difference Histograms Actin\n";
+    string StrOut9 = "Direction Difference Histograms Calcein\n";
 
     for(int zOffsetIndex = 0;zOffsetIndex < zOffsetCount; zOffsetIndex++)
     {
@@ -2172,12 +2217,18 @@ void MainWindow::on_pushButtonCreateOut_clicked()
         for(int i = 0; i < 91; i++)
         {
             DirectionDifferenceHistogram[i] = 0;
+            DirectionDifferenceHistogramActin[i] = 0;
+            DirectionDifferenceHistogramCalcein[i] = 0;
         }
 
         for(int z = zStart; z < zStop ;z++)
         {
             FileParams Params1 = FileParVect1[z];
             FileParams Params2 = FileParVect2[z + zOffset];
+
+            FileParams Params1a = FileParVect1[z + zOffset];
+            FileParams Params2a = FileParVect2[z];
+
 
             int numOfTiles = Params1.ParamsVect.size();
             if (!numOfTiles )
@@ -2200,6 +2251,13 @@ void MainWindow::on_pushButtonCreateOut_clicked()
                 int angle2 = Params2.ParamsVect[t].Params[0];
                 float meanInt1 = Params1.ParamsVect[t].Params[3];
                 float meanInt2 = Params2.ParamsVect[t].Params[3];
+
+                int angle1a = Params1a.ParamsVect[t].Params[0];
+                int angle2a = Params2a.ParamsVect[t].Params[0];
+                float meanInt1a = Params1a.ParamsVect[t].Params[3];
+                float meanInt2a = Params2a.ParamsVect[t].Params[3];
+
+
 
                 bool actinSignal = false;
                 if(meanInt1 >= meanIntensityTreshold)
@@ -2236,7 +2294,32 @@ void MainWindow::on_pushButtonCreateOut_clicked()
                         diff = 180-diff;
                     DirectionDifferenceHistogram[diff]++;
                 }
+// autocorelation
+                if(meanInt1 >= meanIntensityTreshold && meanInt1a >= meanIntensityTreshold)
+                {
+                    int diff;
+                    if(angle1 > angle1a)
+                        diff = angle1 - angle1a;
+                    else
+                        diff = angle1a - angle1;
 
+                    if (diff > 90)
+                        diff = 180-diff;
+                    DirectionDifferenceHistogramActin[diff]++;
+                }
+                if(meanInt2 >= meanIntensityTreshold2 && meanInt2a >= meanIntensityTreshold2)
+                {
+                    int diff;
+                    if(angle2 > angle2a)
+                        diff = angle2 - angle2a;
+                    else
+                        diff = angle2a - angle2;
+
+                    if (diff > 90)
+                        diff = 180-diff;
+                    DirectionDifferenceHistogramCalcein[diff]++;
+                }
+// autocorelation
                 if(!calceinSignal && actinSignal)
                 {
                     AcitinDirectionHistogramNCoexist[angle1]++;
@@ -2256,6 +2339,15 @@ void MainWindow::on_pushButtonCreateOut_clicked()
 
         MeanDirrDiff[zOffsetIndex] = MeanOfDirDiffHistogram(DirectionDifferenceHistogram);
         StdDirrDiff[zOffsetIndex] = StdOfDirDiffHistogram(DirectionDifferenceHistogram, MeanDirrDiff[zOffsetIndex]);
+
+        MeanCos2DirrDiff[zOffsetIndex] = MeanOfCos2Diff(DirectionDifferenceHistogram);
+        StdCos2DirrDiff[zOffsetIndex] = StdOfCos2Diff(DirectionDifferenceHistogram, MeanCos2DirrDiff[zOffsetIndex]);
+
+        MeanCos2DirrDiffActin[zOffsetIndex] = MeanOfCos2Diff(DirectionDifferenceHistogramActin);
+        StdCos2DirrDiffActin[zOffsetIndex] = StdOfCos2Diff(DirectionDifferenceHistogramActin, MeanCos2DirrDiffActin[zOffsetIndex]);
+
+        MeanCos2DirrDiffCalcein[zOffsetIndex] = MeanOfCos2Diff(DirectionDifferenceHistogramCalcein);
+        StdCos2DirrDiffCalcein[zOffsetIndex] = StdOfCos2Diff(DirectionDifferenceHistogramCalcein, MeanCos2DirrDiffCalcein[zOffsetIndex]);
 
 
         ActinMainDir[zOffsetIndex] = FindResultingDirection(AcitinDirectionHistogramOverall);
@@ -2294,6 +2386,12 @@ void MainWindow::on_pushButtonCreateOut_clicked()
 
         StrOut7 += DirDifferenceHistogramToString(DirectionDifferenceHistogram);
         StrOut7 += "\n";
+
+        StrOut8 += DirDifferenceHistogramToString(DirectionDifferenceHistogramActin);
+        StrOut8 += "\n";
+
+        StrOut9 += DirDifferenceHistogramToString(DirectionDifferenceHistogramCalcein);
+        StrOut9 += "\n";
     }
 
     delete[] AcitinDirectionHistogramOverall;
@@ -2306,12 +2404,17 @@ void MainWindow::on_pushButtonCreateOut_clicked()
     delete[] CalceinDirectionHistogramNCoexist;
 
     delete[] DirectionDifferenceHistogram;
+    delete[] DirectionDifferenceHistogramActin;
+    delete[] DirectionDifferenceHistogramCalcein;
 
 
     string StrOut;
 
     StrOut = "zOffeset\t#ActinSignalTiles\t#CalceinSignalTiles\t#CoexsistingSignalTiles\t";
     StrOut += "MeanDifff\tStdDifff\t";
+     StrOut += "MeanCos2Difff\tStdCos2Difff\t";
+     StrOut += "MeanCos2DifffActin\tStdCos2DifffActin\t";
+     StrOut += "MeanCos2DifffCalcein\tStdCos2DifffCalcein\t";
     StrOut += "Actin Main Dir\tActin Spread\tCalcein Main Dir\t Calcein Spread\t";
     StrOut += "Actin w Calcein Main Dir\tActin w Calcein Spread\tCalcein w Actin Main Dir\t Calcein w Actin Spread\t";
     StrOut += "Actin n Calcein Main Dir\tActin n Calcein Spread\tCalcein n Actin Main Dir\t Calcein n Actin Spread\n";
@@ -2324,6 +2427,15 @@ void MainWindow::on_pushButtonCreateOut_clicked()
 
         StrOut += OutputStringFromNumber(MeanDirrDiff[i]) + "\t";
         StrOut += OutputStringFromNumber(StdDirrDiff[i]) + "\t";
+
+        StrOut += OutputStringFromNumber(MeanCos2DirrDiff[i]) + "\t";
+        StrOut += OutputStringFromNumber(StdCos2DirrDiff[i]) + "\t";
+
+        StrOut += OutputStringFromNumber(MeanCos2DirrDiffActin[i]) + "\t";
+        StrOut += OutputStringFromNumber(StdCos2DirrDiffActin[i]) + "\t";
+
+        StrOut += OutputStringFromNumber(MeanCos2DirrDiffCalcein[i]) + "\t";
+        StrOut += OutputStringFromNumber(StdCos2DirrDiffCalcein[i]) + "\t";
 
         StrOut += OutputStringFromNumber(ActinMainDir[i]) + "\t";
         StrOut += OutputStringFromNumber(ActinSpread[i]) + "\t";
@@ -2364,6 +2476,8 @@ void MainWindow::on_pushButtonCreateOut_clicked()
     out2 << StrOut5;
     out2 << StrOut6;
     out2 << StrOut7;
+    out2 << StrOut8;
+    out2 << StrOut9;
     out2.close();
 
     StrOut1.empty();
@@ -2373,9 +2487,20 @@ void MainWindow::on_pushButtonCreateOut_clicked()
     StrOut5.empty();
     StrOut6.empty();
     StrOut7.empty();
+    StrOut8.empty();
+    StrOut9.empty();
 
     delete[] MeanDirrDiff;
     delete[] StdDirrDiff;
+
+    delete[] MeanCos2DirrDiff;
+    delete[] StdCos2DirrDiff;
+
+    delete[] MeanCos2DirrDiffActin;
+    delete[] StdCos2DirrDiffActin;
+
+    delete[] MeanCos2DirrDiffCalcein;
+    delete[] StdCos2DirrDiffCalcein;
 
     delete[] zOffsetValue;
     delete[] ActinTiles;
