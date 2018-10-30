@@ -143,7 +143,7 @@ public:
 
 //    std::vector<std::string> NamesVector2;
 
-
+    void LoadVevtors();
     //float
     FileParams MainWindow::GetDirectionData(boost::filesystem::path FileToOpen);
     //DirDetectionParams MainWindow::GetDirectionData2(boost::filesystem::path FileToOpen);

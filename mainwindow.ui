@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Multi Map Directionality Viewer</string>
   </property>
   <widget class="QWidget" name="centralWidget">
    <widget class="QListWidget" name="FileListWidget">
@@ -157,7 +157,7 @@
      <number>5</number>
     </property>
     <property name="value">
-     <number>1</number>
+     <number>2</number>
     </property>
    </widget>
    <widget class="QLabel" name="label_5">
@@ -186,7 +186,7 @@
      <string>Show shape</string>
     </property>
     <property name="checked">
-     <bool>true</bool>
+     <bool>false</bool>
     </property>
    </widget>
    <widget class="QCheckBox" name="checkBoxShowLine">
@@ -218,7 +218,7 @@
      <string>Show sudocolor</string>
     </property>
     <property name="checked">
-     <bool>true</bool>
+     <bool>false</bool>
     </property>
    </widget>
    <widget class="QLineEdit" name="LineEditSaveDirectory">
@@ -247,8 +247,8 @@
    <widget class="QPushButton" name="pushButtonSaveOut">
     <property name="geometry">
      <rect>
-      <x>630</x>
-      <y>180</y>
+      <x>760</x>
+      <y>600</y>
       <width>75</width>
       <height>23</height>
      </rect>
@@ -485,7 +485,7 @@
      <string>Show Second Image</string>
     </property>
     <property name="checked">
-     <bool>true</bool>
+     <bool>false</bool>
     </property>
    </widget>
    <widget class="QCheckBox" name="checkBoxShowFirstIm">
@@ -501,7 +501,7 @@
      <string>Show First Image</string>
     </property>
     <property name="checked">
-     <bool>true</bool>
+     <bool>false</bool>
     </property>
    </widget>
    <widget class="QCheckBox" name="checkBoxShowTwoIm">
@@ -517,13 +517,13 @@
      <string>Show two Images</string>
     </property>
     <property name="checked">
-     <bool>false</bool>
+     <bool>true</bool>
     </property>
    </widget>
    <widget class="QPushButton" name="pushButtonCreateOut">
     <property name="geometry">
      <rect>
-      <x>700</x>
+      <x>670</x>
       <y>600</y>
       <width>80</width>
       <height>22</height>
@@ -539,7 +539,7 @@
     </property>
     <property name="geometry">
      <rect>
-      <x>610</x>
+      <x>580</x>
       <y>600</y>
       <width>75</width>
       <height>23</height>
@@ -552,7 +552,7 @@
    <widget class="QPushButton" name="pushButtonCreateGlobalHist">
     <property name="geometry">
      <rect>
-      <x>520</x>
+      <x>490</x>
       <y>600</y>
       <width>80</width>
       <height>22</height>
@@ -565,7 +565,7 @@
    <widget class="QPushButton" name="pushButtonStackHist64k">
     <property name="geometry">
      <rect>
-      <x>430</x>
+      <x>400</x>
       <y>600</y>
       <width>80</width>
       <height>22</height>
@@ -620,7 +620,7 @@
      <string>Show channel combination</string>
     </property>
     <property name="checked">
-     <bool>false</bool>
+     <bool>true</bool>
     </property>
    </widget>
    <widget class="QListWidget" name="FileIm1ListWidget">

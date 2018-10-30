@@ -364,8 +364,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->comboBoxImageScale->addItem("Images scale x 1");
     ui->comboBoxImageScale->addItem("Images scale x 1/2");
     ui->comboBoxImageScale->addItem("Images scale x 1/4");
-    ui->comboBoxImageScale->setCurrentIndex(2);
-    imageScale = 1.0;
+    ui->comboBoxImageScale->setCurrentIndex(3);
+    imageScale = 0.5;
 
     CreateDispalyWindows(showFirstImage, showSecondImage, showTwoImages, showImageCombination);
 
@@ -562,6 +562,253 @@ FileParams MainWindow::GetDirectionData(path FileToOpen)
     return LocalParams;
 }
 */
+//----------------------------------------------------------------------------------------------------------------
+void MainWindow::LoadVevtors()
+{
+    if (!exists(InputDirectoryIm1))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((InputDirectoryIm1.string()+ " not exists ").c_str());
+        msgBox.exec();
+        return;
+    }
+    if (!is_directory(InputDirectoryIm1))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((InputDirectoryIm1.string()+ " This is not a directory path ").c_str());
+        msgBox.exec();
+        return;
+    }
+    for (directory_entry& FileToProcess : directory_iterator(InputDirectoryIm1))
+    {
+        regex FilePattern(ui->RegexImLineEdit->text().toStdString());
+        if (!regex_match(FileToProcess.path().filename().string().c_str(), FilePattern ))
+            continue;
+
+        path PathLocal = FileToProcess.path();
+        if (!exists(PathLocal))
+        {
+            QMessageBox msgBox;
+            msgBox.setText((PathLocal.filename().string() + " File not exists" ).c_str());
+            msgBox.exec();
+            break;
+        }
+        Mat ImLocal;
+        ImLocal = imread(PathLocal.string(), CV_LOAD_IMAGE_ANYDEPTH);
+        if(ImIn.type() != CV_16U)
+        {
+            ImIn.convertTo(ImIn,CV_16U);
+        }
+        if (!ImLocal.empty())
+            ImVect1.push_back(ImLocal);
+    }
+    int vect1Size = ImVect1.size();
+    string OutStr = "Images 1 loaded: " + to_string(vect1Size);
+    ui->textEdit->append(OutStr.c_str());
+
+
+    bool imDirectory2OK = true;
+    if (!exists(InputDirectoryIm2))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((InputDirectoryIm2.string()+ " not exists ").c_str());
+        msgBox.exec();
+        imDirectory2OK = false;
+    }
+    if (!is_directory(InputDirectoryIm2))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((InputDirectoryIm2.string()+ " This is not a directory path ").c_str());
+        msgBox.exec();
+        imDirectory2OK = false;
+    }
+    if(imDirectory2OK)
+    {
+        for (directory_entry& FileToProcess : directory_iterator(InputDirectoryIm2))
+        {
+            regex FilePattern(ui->RegexImLineEdit->text().toStdString());
+            if (!regex_match(FileToProcess.path().filename().string().c_str(), FilePattern ))
+                continue;
+
+            path PathLocal = FileToProcess.path();
+            if (!exists(PathLocal))
+            {
+                QMessageBox msgBox;
+                msgBox.setText((PathLocal.filename().string() + " File not exists" ).c_str());
+                msgBox.exec();
+                break;
+            }
+            Mat ImLocal;
+            ImLocal = imread(PathLocal.string(), CV_LOAD_IMAGE_ANYDEPTH);
+            if(ImIn.type() != CV_16U)
+            {
+                ImIn.convertTo(ImIn,CV_16U);
+            }
+            if (!ImLocal.empty())
+                ImVect2.push_back(ImLocal);
+        }
+        int vect2Size = ImVect2.size();
+        OutStr = "Images 2 loaded: " + to_string(vect2Size);
+    }
+    else
+    {
+        OutStr = "Images 2 Directory invalid: ";
+    }
+    ui->textEdit->append(OutStr.c_str());
+
+    bool imDirectory3OK = true;
+    if (!exists(InputDirectoryIm3))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((InputDirectoryIm3.string()+ " not exists ").c_str());
+        msgBox.exec();
+        imDirectory3OK = false;
+    }
+    if (!is_directory(InputDirectoryIm3))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((InputDirectoryIm3.string()+ " This is not a directory path ").c_str());
+        msgBox.exec();
+        imDirectory3OK = false;
+    }
+    if(imDirectory3OK)
+    {
+        for (directory_entry& FileToProcess : directory_iterator(InputDirectoryIm3))
+        {
+            regex FilePattern(ui->RegexImLineEdit->text().toStdString());
+            if (!regex_match(FileToProcess.path().filename().string().c_str(), FilePattern ))
+                continue;
+
+            path PathLocal = FileToProcess.path();
+            if (!exists(PathLocal))
+            {
+                QMessageBox msgBox;
+                msgBox.setText((PathLocal.filename().string() + " File not exists" ).c_str());
+                msgBox.exec();
+                break;
+            }
+            Mat ImLocal;
+            ImLocal = imread(PathLocal.string(), CV_LOAD_IMAGE_ANYDEPTH);
+            if(ImIn.type() != CV_16U)
+            {
+                ImIn.convertTo(ImIn,CV_16U);
+            }
+            if (!ImLocal.empty())
+                ImVect3.push_back(ImLocal);
+        }
+        int vect3Size = ImVect3.size();
+        OutStr = "Images 3 loaded: " + to_string(vect3Size);
+    }
+    else
+    {
+        OutStr = "Images 3 Directory invalid: ";
+    }
+    ui->textEdit->append(OutStr.c_str());
+
+
+
+    bool imDirectory4OK = true;
+    if (!exists(InputDirectory))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((InputDirectory.string()+ " not exists ").c_str());
+        msgBox.exec();
+        imDirectory4OK = false;
+    }
+    if (!is_directory(InputDirectory))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((InputDirectory.string()+ " This is not a directory path ").c_str());
+        msgBox.exec();
+        imDirectory4OK = false;
+    }
+    if(imDirectory4OK)
+    {
+        for (directory_entry& FileToProcess : directory_iterator(InputDirectory))
+        {
+            regex FilePattern(ui->RegexLineEdit->text().toStdString());
+            if (!regex_match(FileToProcess.path().filename().string().c_str(), FilePattern ))
+                continue;
+
+            path PathLocal = FileToProcess.path();
+            if (!exists(PathLocal))
+            {
+                QMessageBox msgBox;
+                msgBox.setText((PathLocal.filename().string() + " File not exists" ).c_str());
+                msgBox.exec();
+                break;
+            }
+            FileParams ParamsLocal = GetDirectionData(PathLocal.string());
+
+            if (ParamsLocal.ParamsVect.size())
+                FileParVect1.push_back(ParamsLocal);
+        }
+        int vect4Size = FileParVect1.size();
+        OutStr = "Directions 1 loaded: " + to_string(vect4Size);
+    }
+    else
+    {
+        OutStr = "Directions 1 directory  invalid: ";
+    }
+    ui->textEdit->append(OutStr.c_str());
+    //
+
+    bool imDirectory5OK = true;
+    if (!exists(InputDirectory2))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((InputDirectory2.string()+ " not exists ").c_str());
+        msgBox.exec();
+        imDirectory5OK = false;
+    }
+    if (!is_directory(InputDirectory2))
+    {
+        QMessageBox msgBox;
+        msgBox.setText((InputDirectory2.string()+ " This is not a directory path ").c_str());
+        msgBox.exec();
+        imDirectory5OK = false;
+    }
+    if(imDirectory5OK)
+    {
+        for (directory_entry& FileToProcess : directory_iterator(InputDirectory2))
+        {
+            regex FilePattern(ui->RegexLineEdit->text().toStdString());
+            if (!regex_match(FileToProcess.path().filename().string().c_str(), FilePattern ))
+                continue;
+
+            path PathLocal = FileToProcess.path();
+            if (!exists(PathLocal))
+            {
+                QMessageBox msgBox;
+                msgBox.setText((PathLocal.filename().string() + " File not exists" ).c_str());
+                msgBox.exec();
+                break;
+            }
+            FileParams ParamsLocal = GetDirectionData(PathLocal.string());
+
+            if (ParamsLocal.ParamsVect.size())
+                FileParVect2.push_back(ParamsLocal);
+        }
+        int vect5Size = FileParVect2.size();
+        OutStr = "Directions 1 loaded: " + to_string(vect5Size);
+    }
+    else
+    {
+        OutStr = "Directions 1 directory  invalid: ";
+    }
+    ui->textEdit->append(OutStr.c_str());
+
+    ui->spinBoxShowImVect1->setMaximum(vect1Size - 1);
+    ui->spinBoxShowImVect1->setValue(0);
+    ui->spinBoxYPlaneToShow->setMaximum(ImVect1[0].rows);
+    ui->spinBoxYPlaneToShow->setValue(ImVect1[0].rows/2);
+    vectSliceToShow = 0;
+
+    //ShowImages();
+    ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3);
+    ShowXZFromVector(0);
+}
+
 //----------------------------------------------------------------------------------------------------------------
 FileParams  MainWindow::GetDirectionData(path FileToOpen)
 {
@@ -1502,6 +1749,8 @@ void MainWindow::FreeImageVectors()
 void MainWindow::ShowImages()
 {
     Mat ImToShow;
+    if(ImIn.empty())
+        return;
     if(showFirstImage)
     {
         ImToShow = ShowImage(ImIn, FilePar1, sudocolor, showShape, showLine, minIm, maxIm, tileLineThickness, featNr,
@@ -1510,6 +1759,8 @@ void MainWindow::ShowImages()
             cv::resize(ImToShow,ImToShow,Size(),imageScale,imageScale,INTER_NEAREST);
         imshow("In File 1",ImToShow);
     }
+    if(ImIn2.empty())
+        return;
     if(showSecondImage)
     {
         ImToShow = ShowImage(ImIn2, FilePar2, sudocolor, showShape, showLine, minIm2, maxIm2, tileLineThickness, featNr,
@@ -2998,249 +3249,7 @@ void MainWindow::on_FileIm1ListWidget_currentTextChanged(const QString &currentT
 
 void MainWindow::on_pushButtonLoadVectors_clicked()
 {
-    FreeImageVectors();
-    if (!exists(InputDirectoryIm1))
-    {
-        QMessageBox msgBox;
-        msgBox.setText((InputDirectoryIm1.string()+ " not exists ").c_str());
-        msgBox.exec();
-        return;
-    }
-    if (!is_directory(InputDirectoryIm1))
-    {
-        QMessageBox msgBox;
-        msgBox.setText((InputDirectoryIm1.string()+ " This is not a directory path ").c_str());
-        msgBox.exec();
-        return;
-    }
-    for (directory_entry& FileToProcess : directory_iterator(InputDirectoryIm1))
-    {
-        regex FilePattern(ui->RegexImLineEdit->text().toStdString());
-        if (!regex_match(FileToProcess.path().filename().string().c_str(), FilePattern ))
-            continue;
-
-        path PathLocal = FileToProcess.path();
-        if (!exists(PathLocal))
-        {
-            QMessageBox msgBox;
-            msgBox.setText((PathLocal.filename().string() + " File not exists" ).c_str());
-            msgBox.exec();
-            break;
-        }
-        Mat ImLocal;
-        ImLocal = imread(PathLocal.string(), CV_LOAD_IMAGE_ANYDEPTH);
-        if(ImIn.type() != CV_16U)
-        {
-            ImIn.convertTo(ImIn,CV_16U);
-        }
-        if (!ImLocal.empty())
-            ImVect1.push_back(ImLocal);
-    }
-    int vect1Size = ImVect1.size();
-    string OutStr = "Images 1 loaded: " + to_string(vect1Size);
-    ui->textEdit->append(OutStr.c_str());
-
-
-    bool imDirectory2OK = true;
-    if (!exists(InputDirectoryIm2))
-    {
-        QMessageBox msgBox;
-        msgBox.setText((InputDirectoryIm2.string()+ " not exists ").c_str());
-        msgBox.exec();
-        imDirectory2OK = false;
-    }
-    if (!is_directory(InputDirectoryIm2))
-    {
-        QMessageBox msgBox;
-        msgBox.setText((InputDirectoryIm2.string()+ " This is not a directory path ").c_str());
-        msgBox.exec();
-        imDirectory2OK = false;
-    }
-    if(imDirectory2OK)
-    {
-        for (directory_entry& FileToProcess : directory_iterator(InputDirectoryIm2))
-        {
-            regex FilePattern(ui->RegexImLineEdit->text().toStdString());
-            if (!regex_match(FileToProcess.path().filename().string().c_str(), FilePattern ))
-                continue;
-
-            path PathLocal = FileToProcess.path();
-            if (!exists(PathLocal))
-            {
-                QMessageBox msgBox;
-                msgBox.setText((PathLocal.filename().string() + " File not exists" ).c_str());
-                msgBox.exec();
-                break;
-            }
-            Mat ImLocal;
-            ImLocal = imread(PathLocal.string(), CV_LOAD_IMAGE_ANYDEPTH);
-            if(ImIn.type() != CV_16U)
-            {
-                ImIn.convertTo(ImIn,CV_16U);
-            }
-            if (!ImLocal.empty())
-                ImVect2.push_back(ImLocal);
-        }
-        int vect2Size = ImVect2.size();
-        OutStr = "Images 2 loaded: " + to_string(vect2Size);
-    }
-    else
-    {
-        OutStr = "Images 2 Directory invalid: ";
-    }
-    ui->textEdit->append(OutStr.c_str());
-
-    bool imDirectory3OK = true;
-    if (!exists(InputDirectoryIm3))
-    {
-        QMessageBox msgBox;
-        msgBox.setText((InputDirectoryIm3.string()+ " not exists ").c_str());
-        msgBox.exec();
-        imDirectory3OK = false;
-    }
-    if (!is_directory(InputDirectoryIm3))
-    {
-        QMessageBox msgBox;
-        msgBox.setText((InputDirectoryIm3.string()+ " This is not a directory path ").c_str());
-        msgBox.exec();
-        imDirectory3OK = false;
-    }
-    if(imDirectory3OK)
-    {
-        for (directory_entry& FileToProcess : directory_iterator(InputDirectoryIm3))
-        {
-            regex FilePattern(ui->RegexImLineEdit->text().toStdString());
-            if (!regex_match(FileToProcess.path().filename().string().c_str(), FilePattern ))
-                continue;
-
-            path PathLocal = FileToProcess.path();
-            if (!exists(PathLocal))
-            {
-                QMessageBox msgBox;
-                msgBox.setText((PathLocal.filename().string() + " File not exists" ).c_str());
-                msgBox.exec();
-                break;
-            }
-            Mat ImLocal;
-            ImLocal = imread(PathLocal.string(), CV_LOAD_IMAGE_ANYDEPTH);
-            if(ImIn.type() != CV_16U)
-            {
-                ImIn.convertTo(ImIn,CV_16U);
-            }
-            if (!ImLocal.empty())
-                ImVect3.push_back(ImLocal);
-        }
-        int vect3Size = ImVect3.size();
-        OutStr = "Images 3 loaded: " + to_string(vect3Size);
-    }
-    else
-    {
-        OutStr = "Images 3 Directory invalid: ";
-    }
-    ui->textEdit->append(OutStr.c_str());
-
-
-
-    bool imDirectory4OK = true;
-    if (!exists(InputDirectory))
-    {
-        QMessageBox msgBox;
-        msgBox.setText((InputDirectory.string()+ " not exists ").c_str());
-        msgBox.exec();
-        imDirectory4OK = false;
-    }
-    if (!is_directory(InputDirectory))
-    {
-        QMessageBox msgBox;
-        msgBox.setText((InputDirectory.string()+ " This is not a directory path ").c_str());
-        msgBox.exec();
-        imDirectory4OK = false;
-    }
-    if(imDirectory4OK)
-    {
-        for (directory_entry& FileToProcess : directory_iterator(InputDirectory))
-        {
-            regex FilePattern(ui->RegexLineEdit->text().toStdString());
-            if (!regex_match(FileToProcess.path().filename().string().c_str(), FilePattern ))
-                continue;
-
-            path PathLocal = FileToProcess.path();
-            if (!exists(PathLocal))
-            {
-                QMessageBox msgBox;
-                msgBox.setText((PathLocal.filename().string() + " File not exists" ).c_str());
-                msgBox.exec();
-                break;
-            }
-            FileParams ParamsLocal = GetDirectionData(PathLocal.string());
-
-            if (ParamsLocal.ParamsVect.size())
-                FileParVect1.push_back(ParamsLocal);
-        }
-        int vect4Size = FileParVect1.size();
-        OutStr = "Directions 1 loaded: " + to_string(vect4Size);
-    }
-    else
-    {
-        OutStr = "Directions 1 directory  invalid: ";
-    }
-    ui->textEdit->append(OutStr.c_str());
-    //
-
-    bool imDirectory5OK = true;
-    if (!exists(InputDirectory2))
-    {
-        QMessageBox msgBox;
-        msgBox.setText((InputDirectory2.string()+ " not exists ").c_str());
-        msgBox.exec();
-        imDirectory5OK = false;
-    }
-    if (!is_directory(InputDirectory2))
-    {
-        QMessageBox msgBox;
-        msgBox.setText((InputDirectory2.string()+ " This is not a directory path ").c_str());
-        msgBox.exec();
-        imDirectory5OK = false;
-    }
-    if(imDirectory5OK)
-    {
-        for (directory_entry& FileToProcess : directory_iterator(InputDirectory2))
-        {
-            regex FilePattern(ui->RegexLineEdit->text().toStdString());
-            if (!regex_match(FileToProcess.path().filename().string().c_str(), FilePattern ))
-                continue;
-
-            path PathLocal = FileToProcess.path();
-            if (!exists(PathLocal))
-            {
-                QMessageBox msgBox;
-                msgBox.setText((PathLocal.filename().string() + " File not exists" ).c_str());
-                msgBox.exec();
-                break;
-            }
-            FileParams ParamsLocal = GetDirectionData(PathLocal.string());
-
-            if (ParamsLocal.ParamsVect.size())
-                FileParVect2.push_back(ParamsLocal);
-        }
-        int vect5Size = FileParVect2.size();
-        OutStr = "Directions 1 loaded: " + to_string(vect5Size);
-    }
-    else
-    {
-        OutStr = "Directions 1 directory  invalid: ";
-    }
-    ui->textEdit->append(OutStr.c_str());
-
-    ui->spinBoxShowImVect1->setMaximum(vect1Size - 1);
-    ui->spinBoxShowImVect1->setValue(0);
-    ui->spinBoxYPlaneToShow->setMaximum(ImVect1[0].rows);
-    ui->spinBoxYPlaneToShow->setValue(ImVect1[0].rows/2);
-    vectSliceToShow = 0;
-
-    //ShowImages();
-    ShowFromVector(vectSliceToShow,vectSliceOffset,showVectIm1,showVectIm2,showVectIm3);
-    ShowXZFromVector(0);
+    LoadVevtors();
 }
 
 
@@ -3357,6 +3366,8 @@ void MainWindow::on_pushButton_2_clicked()
     OpenImage1Directory();
     OpenImage2Directory();
     OpenImage3Directory();
+
+    LoadVevtors();
 }
 
 void MainWindow::on_spinBoxDisplayScale_valueChanged(int arg1)
